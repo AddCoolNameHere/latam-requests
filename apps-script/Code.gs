@@ -360,7 +360,7 @@ function createRequest_(data) {
   } catch (err) { /* segue o jogo */ }
 
   return { success: true, id: id, slaDue: toIso_(slaDue), pending: true,
-           message: 'Solicitação registrada — aguardando triagem' };
+           message: 'Request registered — awaiting triage' };
 }
 
 // edição (usada pela triagem) — NÃO mexe em Validated
@@ -372,7 +372,7 @@ function updateRequest_(data) {
   if (targetRow === -1) return { success: false, error: 'ID não encontrado: ' + data.id };
   applyEdits_(sh, map, targetRow, data);
   setCell_(sh, map, targetRow, 'Updated At', new Date());
-  return { success: true, id: data.id, message: 'Atualizado' };
+  return { success: true, id: data.id, message: 'Updated' };
 }
 
 // valida: exige responsável, marca Validated=Yes e notifica o solicitante
@@ -386,7 +386,7 @@ function validateRequest_(data) {
   applyEdits_(sh, map, targetRow, data);
 
   const responsible = String(getCell_(sh, map, targetRow, 'Responsible')).trim();
-  if (!responsible) return { success: false, error: 'Defina um responsável antes de validar.' };
+  if (!responsible) return { success: false, error: 'Please assign an owner before validating.' };
 
   setCell_(sh, map, targetRow, 'Validated', 'Yes');
   setCell_(sh, map, targetRow, 'Validated At', new Date());
@@ -395,7 +395,7 @@ function validateRequest_(data) {
   const rec = readRow_(sh, map, targetRow);
   try { notifyRequesterValidated_(rec); } catch (err) { /* não bloqueia */ }
 
-  return { success: true, id: data.id, message: 'Validado e solicitante notificado' };
+  return { success: true, id: data.id, message: 'Validated and requester notified' };
 }
 
 function applyEdits_(sh, map, targetRow, data) {
@@ -423,27 +423,27 @@ function emailRow_(label, value) {
 
 function notifyBiaNewRequest_(rec) {
   if (!CONFIG.notify || !CONFIG.notify.enabled || !CONFIG.notify.bia) return;
-  const subject = '🆕 Nova solicitação ' + rec.id + ' — ' + rec.category + ' (' + rec.priority + ')';
+  const subject = '🆕 New request ' + rec.id + ' — ' + rec.category + ' (' + rec.priority + ')';
   const html =
     '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px">' +
-    '<h2 style="color:#1A365D;margin:0 0 4px">Nova solicitação LATAM</h2>' +
-    '<p style="margin:0 0 14px;color:#718096">Aguardando triagem.</p>' +
+    '<h2 style="color:#1A365D;margin:0 0 4px">New LATAM request</h2>' +
+    '<p style="margin:0 0 14px;color:#718096">Awaiting triage.</p>' +
     '<table style="border-collapse:collapse;font-size:14px">' +
       emailRow_('ID', rec.id) +
-      emailRow_('Solicitante', (rec.requesterName || '') + ' (' + (rec.requesterEmail || '') + ')') +
-      emailRow_('Categoria', rec.category) +
-      emailRow_('Prioridade', rec.priority) +
-      emailRow_('Assunto', rec.subject) +
-      emailRow_('Descrição', rec.description) +
-      emailRow_('Projeto', rec.project || '—') +
-      emailRow_('País', rec.country || '—') +
-      emailRow_('Responsável sugerido', rec.responsible || '—') +
-      emailRow_('ETA sugerido', rec.eta || '—') +
+      emailRow_('Requester', (rec.requesterName || '') + ' (' + (rec.requesterEmail || '') + ')') +
+      emailRow_('Category', rec.category) +
+      emailRow_('Priority', rec.priority) +
+      emailRow_('Subject', rec.subject) +
+      emailRow_('Description', rec.description) +
+      emailRow_('Project', rec.project || '—') +
+      emailRow_('Country', rec.country || '—') +
+      emailRow_('Suggested owner', rec.responsible || '—') +
+      emailRow_('Suggested ETA', rec.eta || '—') +
       emailRow_('SLA', rec.slaDue || '—') +
       (rec.link ? emailRow_('Link', '<a href="' + rec.link + '">' + rec.link + '</a>') : '') +
     '</table>' +
     '<p style="margin:20px 0 6px"><a href="' + (CONFIG.notify.triageUrl || '#') +
-      '" style="background:#2C5282;color:#fff;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Abrir triagem →</a></p>' +
+      '" style="background:#2C5282;color:#fff;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Open triage →</a></p>' +
     '</div>';
   MailApp.sendEmail({ to: CONFIG.notify.bia, subject: subject, htmlBody: html, name: CONFIG.notify.fromName || 'LATAM Requests' });
 }
@@ -451,20 +451,20 @@ function notifyBiaNewRequest_(rec) {
 function notifyRequesterValidated_(rec) {
   if (!CONFIG.notify || !CONFIG.notify.enabled) return;
   if (!rec.requesterEmail) return;
-  const subject = 'Sua solicitação ' + rec.id + ' foi recebida — ' + rec.status;
+  const subject = 'Your request ' + rec.id + ' has been received — ' + rec.status;
   const html =
     '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px">' +
-    '<h2 style="color:#1A365D;margin:0 0 8px">Solicitação recebida ✅</h2>' +
-    '<p>Olá ' + (rec.requesterName || '') + ',</p>' +
-    '<p>Sua solicitação <b>' + rec.id + '</b> ("' + rec.subject + '") foi recebida pelo time LATAM e já está em andamento.</p>' +
+    '<h2 style="color:#1A365D;margin:0 0 8px">Request received ✅</h2>' +
+    '<p>Hi ' + (rec.requesterName || '') + ',</p>' +
+    '<p>Your request <b>' + rec.id + '</b> ("' + rec.subject + '") has been received by the LATAM team and is now in progress.</p>' +
     '<table style="border-collapse:collapse;font-size:14px;margin:8px 0">' +
-      emailRow_('Responsável', rec.responsible || '—') +
-      emailRow_('Status atual', rec.status) +
+      emailRow_('Owner', rec.responsible || '—') +
+      emailRow_('Current status', rec.status) +
       (rec.eta ? emailRow_('ETA', fmtBr_(rec.eta)) : '') +
-      (rec.slaDue ? emailRow_('Prazo (SLA)', fmtBr_(rec.slaDue)) : '') +
+      (rec.slaDue ? emailRow_('Due (SLA)', fmtBr_(rec.slaDue)) : '') +
     '</table>' +
-    '<p style="margin-top:14px;color:#718096">Você será avisado de atualizações importantes. Obrigado!</p>' +
-    '<p style="color:#718096;font-size:12px">— Time LATAM, Aceolution</p>' +
+    '<p style="margin-top:14px;color:#718096">You\'ll be notified of important updates. Thank you!</p>' +
+    '<p style="color:#718096;font-size:12px">— LATAM Team, Aceolution</p>' +
     '</div>';
   MailApp.sendEmail({ to: rec.requesterEmail, subject: subject, htmlBody: html, name: CONFIG.notify.fromName || 'LATAM Requests' });
 }

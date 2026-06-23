@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LATAM Requests — Triagem</title>
+<title>LATAM Requests — Triage</title>
 <style>
   :root {
     --c-primary: #2C5282; --c-primary-dark: #1A365D; --c-accent: #4A9FE0;
@@ -13,14 +13,21 @@
   }
   * { box-sizing: border-box; }
   body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif; background:var(--c-bg); color:var(--c-text); }
-  .topbar { background:linear-gradient(135deg,var(--c-primary-dark),var(--c-primary)); color:#fff; padding:16px 24px; display:flex; align-items:center; gap:14px; }
-  .brand-badge { width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25); display:grid; place-items:center; font-weight:800; font-size:17px; }
-  .brand-text strong { font-size:15px; display:block; }
-  .brand-text span { font-size:12px; opacity:.82; }
-  .topbar .spacer { flex:1; }
-  .topbar .meta { font-size:12px; opacity:.85; text-align:right; }
-  .btn { background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.28); padding:8px 14px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; text-decoration:none; display:inline-block; }
-  .btn:hover { background:rgba(255,255,255,.26); }
+
+  /* header (Aceolution logo) */
+  .app-header { background:var(--c-card); border:1px solid var(--c-border); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 20px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .brand-wrap { display:flex; align-items:center; gap:14px; }
+  .brand-logo { height:30px; width:auto; }
+  .brand-divider { width:1px; height:30px; background:var(--c-border); }
+  .brand-title-line { font-size:10px; color:var(--c-muted); letter-spacing:1.4px; font-weight:700; }
+  .brand-region-line { color:var(--c-primary-dark); font-size:18px; font-weight:800; letter-spacing:1.5px; margin-top:1px; }
+  .header-right { display:flex; align-items:center; gap:10px; }
+  .header-right .meta { font-size:12px; color:var(--c-muted); text-align:right; }
+  .btn { background:var(--c-primary); color:#fff; border:none; padding:8px 14px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+  .btn:hover { background:var(--c-primary-dark); }
+  .btn.ghost { background:#fff; color:var(--c-primary); border:1px solid var(--c-border); }
+  .btn.ghost:hover { background:#F7FAFC; }
+
   .wrap { max-width:1280px; margin:22px auto 60px; padding:0 18px; }
 
   .tabs { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
@@ -84,31 +91,35 @@
 </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="brand-badge">A</div>
-    <div class="brand-text">
-      <strong>Aceolution · LATAM Requests</strong>
-      <span>Triagem — designar, editar e validar</span>
-    </div>
-    <div class="spacer"></div>
-    <div class="meta" id="meta-info"></div>
-    <a class="btn" href="dashboard.html" style="margin-left:14px">📊 Dashboard</a>
-    <button class="btn" id="refresh-btn" style="margin-left:8px">↻ Atualizar</button>
-  </div>
-
   <div class="wrap">
+    <header class="app-header">
+      <div class="brand-wrap">
+        <img src="https://aceolution.com/img/logo2.png" alt="Aceolution" class="brand-logo" onerror="this.style.display='none'">
+        <div class="brand-divider"></div>
+        <div class="brand-sub">
+          <div class="brand-title-line">ACEOLUTION · LATAM REQUESTS</div>
+          <div class="brand-region-line">TRIAGE</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="meta" id="meta-info"></div>
+        <a class="btn ghost" href="dashboard.html">📊 Dashboard</a>
+        <button class="btn ghost" id="refresh-btn">↻ Refresh</button>
+      </div>
+    </header>
+
     <div id="config-warn" class="config-warn" style="display:none">
-      ⚠️ <b>Backend não configurado.</b> Cole a URL do Web App em <code>CONFIG.scriptUrl</code> no topo deste arquivo.
+      ⚠️ <b>Backend not configured.</b> Paste the Web App URL into <code>CONFIG.scriptUrl</code> at the top of this file.
     </div>
 
     <div id="content" style="display:none">
       <div class="tabs">
-        <div class="tab active" data-view="novos" id="tab-novos">🔵 Novos<span class="n" id="n-novos">0</span></div>
-        <div class="tab" data-view="validados" id="tab-validados">✅ Validados<span class="n" id="n-validados">0</span></div>
-        <div class="tab" data-view="todos" id="tab-todos">Todos<span class="n" id="n-todos">0</span></div>
+        <div class="tab active" data-view="novos" id="tab-novos">🔵 New<span class="n" id="n-novos">0</span></div>
+        <div class="tab" data-view="validados" id="tab-validados">✅ Validated<span class="n" id="n-validados">0</span></div>
+        <div class="tab" data-view="todos" id="tab-todos">All<span class="n" id="n-todos">0</span></div>
         <div class="filters">
-          <select id="f-category"><option value="">Todas categorias</option></select>
-          <input id="f-search" type="search" placeholder="Buscar…" />
+          <select id="f-category"><option value="">All categories</option></select>
+          <input id="f-search" type="search" placeholder="Search…" />
         </div>
       </div>
 
@@ -117,8 +128,8 @@
           <table>
             <thead>
               <tr>
-                <th>ID</th><th>Estado</th><th>Assunto</th><th>Categoria</th><th>Prioridade</th>
-                <th>Responsável</th><th>Status</th><th>Criado</th><th></th>
+                <th>ID</th><th>State</th><th>Subject</th><th>Category</th><th>Priority</th>
+                <th>Owner</th><th>Status</th><th>Created</th><th></th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -127,23 +138,23 @@
       </div>
     </div>
 
-    <div class="loading" id="loading">Carregando solicitações…</div>
+    <div class="loading" id="loading">Loading requests…</div>
     <div class="error-box" id="error" style="display:none"></div>
   </div>
 
-  <!-- Modal de triagem / edição -->
+  <!-- Triage / edit modal -->
   <div class="modal-bg" id="modal-bg">
     <div class="modal">
-      <header><h3 id="m-title">Triar solicitação</h3><span class="x" id="m-close">×</span></header>
+      <header><h3 id="m-title">Triage request</h3><span class="x" id="m-close">×</span></header>
       <div class="body">
         <div class="ctx" id="m-ctx"></div>
         <div class="val-note" id="m-valnote" style="display:none"></div>
         <div>
-          <label>Responsável <span class="req-mark" id="m-resp-req">*</span></label>
-          <select id="m-responsible"><option value="">— escolher —</option></select>
+          <label>Owner <span class="req-mark" id="m-resp-req">*</span></label>
+          <select id="m-responsible"><option value="">— choose —</option></select>
         </div>
         <div>
-          <label>Prioridade <span style="font-weight:400;color:#718096">(recalcula SLA)</span></label>
+          <label>Priority <span style="font-weight:400;color:#718096">(recalculates SLA)</span></label>
           <select id="m-priority"></select>
         </div>
         <div>
@@ -155,15 +166,15 @@
           <input id="m-eta" type="date" />
         </div>
         <div class="full">
-          <label>Notas internas</label>
-          <textarea id="m-notes" placeholder="Anotações do time (não vão pro solicitante)…"></textarea>
+          <label>Internal notes</label>
+          <textarea id="m-notes" placeholder="Team notes (not shown to the requester)…"></textarea>
         </div>
       </div>
       <footer>
-        <button class="cancel" id="m-cancel">Cancelar</button>
+        <button class="cancel" id="m-cancel">Cancel</button>
         <div class="right">
-          <button class="save" id="m-save">Salvar sem validar</button>
-          <button class="validate" id="m-validate">✅ Validar e notificar</button>
+          <button class="save" id="m-save">Save without validating</button>
+          <button class="validate" id="m-validate">✅ Validate & notify</button>
         </div>
       </footer>
     </div>
@@ -173,7 +184,7 @@
 
 <script>
 // =====================================================================
-// CONFIG — mesma URL do Web App usada no requests.html / dashboard.html
+// CONFIG — same Web App URL as requests.html / dashboard.html
 // =====================================================================
 const CONFIG = {
   scriptUrl: 'https://script.google.com/macros/s/AKfycbza2es5niwMkvjzNbmbCfqLOLnxONG0iZPG4hsHtHmgSPioBk7XbMP5Xie-7F0ykCM9/exec',
@@ -205,7 +216,7 @@ const $ = function (id) { return document.getElementById(id); };
 function isConfigured() { return CONFIG.scriptUrl && CONFIG.scriptUrl.indexOf('COLE_A_URL') !== 0; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function parseDate(iso) { if (!iso) return null; const d = new Date(iso); return isNaN(d.getTime()) ? null : d; }
-function fmtDate(iso) { const d = parseDate(iso); return d ? d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—'; }
+function fmtDate(iso) { const d = parseDate(iso); return d ? d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'2-digit' }) : '—'; }
 function fmtDateInput(iso) { const d = parseDate(iso); if (!d) return ''; return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function pill(text, colors) { const c = colors[text] || {bg:'#EDF2F7',fg:'#4A5568'}; return '<span class="pill" style="background:' + c.bg + ';color:' + c.fg + '">' + esc(text || '—') + '</span>'; }
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._tm); t._tm = setTimeout(function () { t.classList.remove('show'); }, 2800); }
@@ -225,7 +236,7 @@ async function loadAll() {
         team: metaRes.team || DEFAULTS.team,
       };
     }
-    if (!reqRes || !reqRes.success) throw new Error((reqRes && reqRes.error) || 'resposta inválida');
+    if (!reqRes || !reqRes.success) throw new Error((reqRes && reqRes.error) || 'invalid response');
     ALL = reqRes.requests || [];
     setupSelects();
     render();
@@ -233,11 +244,11 @@ async function loadAll() {
     $('content').style.display = 'block';
     const now = new Date();
     $('meta-info').innerHTML = (metaRes && metaRes.version ? metaRes.version + ' · ' : '') +
-      'atualizado ' + now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+      'updated ' + now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
   } catch (err) {
     $('loading').style.display = 'none';
     $('error').style.display = 'block';
-    $('error').textContent = 'Erro ao carregar: ' + err.message;
+    $('error').textContent = 'Error loading: ' + err.message;
   }
 }
 
@@ -256,8 +267,7 @@ function fillSel(id, items, keepFirst) {
 
 function counts() {
   const novos = ALL.filter(function (r) { return !r.validated; }).length;
-  const val = ALL.length - novos;
-  return { novos: novos, validados: val, todos: ALL.length };
+  return { novos: novos, validados: ALL.length - novos, todos: ALL.length };
 }
 
 function currentRows() {
@@ -281,14 +291,12 @@ function render() {
 
   const rows = currentRows();
   const tb = $('tbody');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">Nada aqui. 🎉</td></tr>'; return; }
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">Nothing here. 🎉</td></tr>'; return; }
   tb.innerHTML = rows.map(function (r) {
-    const badge = r.validated
-      ? '<span class="pill badge-val">Validado</span>'
-      : '<span class="pill badge-new">Novo</span>';
+    const badge = r.validated ? '<span class="pill badge-val">Validated</span>' : '<span class="pill badge-new">New</span>';
     const btn = r.validated
-      ? '<button class="act-btn edit" data-id="' + esc(r.id) + '">Editar</button>'
-      : '<button class="act-btn" data-id="' + esc(r.id) + '">Triar →</button>';
+      ? '<button class="act-btn edit" data-id="' + esc(r.id) + '">Edit</button>'
+      : '<button class="act-btn" data-id="' + esc(r.id) + '">Triage →</button>';
     return '<tr class="' + (r.validated ? '' : 'pending') + '">' +
       '<td class="rid-cell">' + esc(r.id) + '</td>' +
       '<td>' + badge + '</td>' +
@@ -311,7 +319,7 @@ function openModal(id) {
   const r = ALL.find(function (x) { return x.id === id; });
   if (!r) return;
   editingId = id;
-  $('m-title').textContent = (r.validated ? 'Editar ' : 'Triar ') + r.id;
+  $('m-title').textContent = (r.validated ? 'Edit ' : 'Triage ') + r.id;
   $('m-ctx').innerHTML =
     '<b>' + esc(r.subject) + '</b><br>' +
     esc(r.category) + ' · ' + esc(r.priority) + ' · ' + esc(r.requesterName) + ' (' + esc(r.requesterEmail) + ')' +
@@ -326,15 +334,15 @@ function openModal(id) {
 
   if (r.validated) {
     $('m-valnote').style.display = 'block';
-    $('m-valnote').textContent = '✅ Já validada' + (r.validatedAt ? ' em ' + fmtDate(r.validatedAt) : '') + ' — está no dashboard. Editar não reenvia email.';
+    $('m-valnote').textContent = '✅ Already validated' + (r.validatedAt ? ' on ' + fmtDate(r.validatedAt) : '') + ' — it\'s on the dashboard. Editing won\'t resend the email.';
     $('m-validate').style.display = 'none';
     $('m-resp-req').style.display = 'none';
-    $('m-save').textContent = 'Salvar alterações';
+    $('m-save').textContent = 'Save changes';
   } else {
     $('m-valnote').style.display = 'none';
     $('m-validate').style.display = 'inline-block';
     $('m-resp-req').style.display = 'inline';
-    $('m-save').textContent = 'Salvar sem validar';
+    $('m-save').textContent = 'Save without validating';
   }
   updateValidateBtn();
   $('modal-bg').classList.add('open');
@@ -369,17 +377,17 @@ async function saveOnly() {
   const p = collectEdits(); const r = ALL.find(function (x) { return x.id === editingId; });
   applyOptimistic(r, p, false);
   closeModal(); render();
-  try { await post('updateRequest', p); toast('Alterações salvas: ' + p.id); setTimeout(loadAll, 1200); }
-  catch (e) { toast('Erro ao salvar'); }
+  try { await post('updateRequest', p); toast('Changes saved: ' + p.id); setTimeout(loadAll, 1200); }
+  catch (e) { toast('Error saving'); }
 }
 async function validateNow() {
   const p = collectEdits();
-  if (!p.responsible) { toast('Defina um responsável antes de validar.'); return; }
+  if (!p.responsible) { toast('Assign an owner before validating.'); return; }
   const r = ALL.find(function (x) { return x.id === editingId; });
   applyOptimistic(r, p, true);
   closeModal(); render();
-  try { await post('validateRequest', p); toast('✅ Validado! Solicitante notificado: ' + p.id); setTimeout(loadAll, 1400); }
-  catch (e) { toast('Erro ao validar'); }
+  try { await post('validateRequest', p); toast('✅ Validated! Requester notified: ' + p.id); setTimeout(loadAll, 1400); }
+  catch (e) { toast('Error validating'); }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
