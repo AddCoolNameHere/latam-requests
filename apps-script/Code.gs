@@ -423,7 +423,7 @@ function emailRow_(label, value) {
 
 function notifyBiaNewRequest_(rec) {
   if (!CONFIG.notify || !CONFIG.notify.enabled || !CONFIG.notify.bia) return;
-  const subject = '🆕 New request ' + rec.id + ' — ' + rec.category + ' (' + rec.priority + ')';
+  const subject = 'New request ' + rec.id + ' — ' + rec.category + ' (' + rec.priority + ')';
   const html =
     '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px">' +
     '<h2 style="color:#1A365D;margin:0 0 4px">New LATAM request</h2>' +
@@ -454,7 +454,7 @@ function notifyRequesterValidated_(rec) {
   const subject = 'Your request ' + rec.id + ' has been received — ' + rec.status;
   const html =
     '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px">' +
-    '<h2 style="color:#1A365D;margin:0 0 8px">Request received ✅</h2>' +
+    '<h2 style="color:#1A365D;margin:0 0 8px">Request received</h2>' +
     '<p>Hi ' + (rec.requesterName || '') + ',</p>' +
     '<p>Your request <b>' + rec.id + '</b> ("' + rec.subject + '") has been received by the LATAM team and is now in progress.</p>' +
     '<table style="border-collapse:collapse;font-size:14px;margin:8px 0">' +

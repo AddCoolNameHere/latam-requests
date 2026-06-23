@@ -6,122 +6,152 @@
 <title>LATAM Requests — Dashboard</title>
 <style>
   :root {
-    --c-primary: #2C5282; --c-primary-dark: #1A365D; --c-accent: #4A9FE0;
-    --c-bg: #F4F6F9; --c-card: #FFFFFF; --c-border: #E2E8F0;
-    --c-text: #1A202C; --c-muted: #718096; --c-danger: #C53030; --c-warn: #C05621; --c-success: #2F855A;
-    --radius: 12px; --shadow: 0 1px 3px rgba(26,54,93,.08), 0 8px 24px rgba(26,54,93,.06);
+    --navy:#16243B; --primary:#2C5282; --primary-700:#21405F; --accent:#3B82C4;
+    --bg:#F6F8FB; --surface:#FFFFFF; --border:#E5E9F0; --border-strong:#D4DBE6;
+    --text:#1B2733; --text-2:#56657A; --text-3:#8A98AB;
+    --green:#1F8A53; --green-bg:#E8F5EE; --amber:#A96A12; --amber-bg:#FBF2E0;
+    --red:#C0392B; --red-bg:#FBEBE9; --blue:#2B6CB0; --blue-bg:#EAF2FB;
+    --radius:10px; --radius-sm:8px;
+    --shadow-sm:0 1px 2px rgba(16,33,60,.05);
+    --shadow:0 1px 3px rgba(16,33,60,.06), 0 8px 22px rgba(16,33,60,.05);
+    --font:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif; background:var(--c-bg); color:var(--c-text); }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font); background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
 
-  /* header (Aceolution logo) */
-  .app-header { background:var(--c-card); border:1px solid var(--c-border); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 20px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
-  .brand-wrap { display:flex; align-items:center; gap:14px; }
-  .brand-logo { height:30px; width:auto; }
-  .brand-divider { width:1px; height:30px; background:var(--c-border); }
-  .brand-title-line { font-size:10px; color:var(--c-muted); letter-spacing:1.4px; font-weight:700; }
-  .brand-region-line { color:var(--c-primary-dark); font-size:18px; font-weight:800; letter-spacing:1.5px; margin-top:1px; }
-  .header-right { display:flex; align-items:center; gap:10px; }
-  .header-right .meta { font-size:12px; color:var(--c-muted); text-align:right; }
-  .btn { background:var(--c-primary); color:#fff; border:none; padding:8px 14px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
-  .btn:hover { background:var(--c-primary-dark); }
-  .btn.ghost { background:#fff; color:var(--c-primary); border:1px solid var(--c-border); }
-  .btn.ghost:hover { background:#F7FAFC; }
-  .btn .pendnum { background:var(--c-danger); color:#fff; border-radius:999px; padding:1px 7px; font-size:11px; }
+  .topbar { background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:20; }
+  .topbar-inner { max-width:1320px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .brand { display:flex; align-items:center; gap:13px; }
+  .brand-logo { height:26px; width:auto; display:block; }
+  .brand-sep { width:1px; height:22px; background:var(--border-strong); }
+  .brand-name { font-size:14px; font-weight:600; color:var(--navy); letter-spacing:-.1px; }
+  .topbar-actions { display:flex; align-items:center; gap:14px; }
+  .topbar-actions .meta { font-size:12px; color:var(--text-3); }
 
-  .wrap { max-width:1320px; margin:22px auto 60px; padding:0 18px; }
-  .readonly-note { font-size:12px; color:var(--c-muted); margin:-4px 0 16px; }
+  .btn { font:inherit; font-weight:600; font-size:13px; border-radius:var(--radius-sm); cursor:pointer; border:1px solid transparent; display:inline-flex; align-items:center; gap:6px; transition:background .15s, border-color .15s; }
+  .btn svg { width:14px; height:14px; }
+  .btn-outline { background:#fff; color:var(--primary); border-color:var(--border-strong); padding:8px 14px; }
+  .btn-outline:hover { background:#F4F7FB; }
 
-  .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px; }
-  .kpi { background:var(--c-card); border:1px solid var(--c-border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px 18px; }
-  .kpi .label { font-size:12px; color:var(--c-muted); font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
-  .kpi .value { font-size:30px; font-weight:800; color:var(--c-primary-dark); line-height:1.1; margin-top:4px; }
-  .kpi.alert .value { color:var(--c-danger); }
-  .kpi.warn .value { color:var(--c-warn); }
-  .kpi.ok .value { color:var(--c-success); }
+  .page { max-width:1320px; margin:0 auto; padding:26px 24px 64px; }
+  .page-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:22px; }
+  .page-title { font-size:22px; font-weight:700; color:var(--navy); margin:0 0 3px; letter-spacing:-.3px; }
+  .page-sub { margin:0; color:var(--text-2); font-size:13.5px; }
 
-  .panels { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px; }
-  .card { background:var(--c-card); border:1px solid var(--c-border); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; }
-  .card h3 { margin:0 0 14px; font-size:14px; color:var(--c-primary-dark); text-transform:uppercase; letter-spacing:.4px; }
-  .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:9px; font-size:13px; }
-  .bar-row .name { width:130px; flex-shrink:0; color:#2D3748; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .bar-track { flex:1; background:#EDF2F7; border-radius:6px; height:18px; overflow:hidden; }
-  .bar-fill { height:100%; border-radius:6px; background:var(--c-accent); min-width:2px; transition:width .3s; }
-  .bar-row .count { width:34px; text-align:right; font-weight:700; color:var(--c-primary-dark); }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm); }
+  .section-label { font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.7px; }
 
-  .risk-card { margin-bottom:20px; }
-  .risk-list { display:flex; flex-direction:column; gap:8px; }
-  .risk-item { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; border:1px solid var(--c-border); background:#fff; font-size:13px; }
-  .risk-item.overdue { background:#FFF5F5; border-color:#FEB2B2; }
-  .risk-item.soon { background:#FFFAF0; border-color:#FBD38D; }
-  .risk-item .rid { font-weight:700; color:var(--c-primary); width:92px; flex-shrink:0; }
-  .risk-item .rsub { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:22px; }
+  .kpi { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:16px 18px; position:relative; overflow:hidden; }
+  .kpi::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--border-strong); }
+  .kpi.alert::before { background:var(--red); } .kpi.warn::before { background:var(--amber); } .kpi.ok::before { background:var(--green); } .kpi.info::before { background:var(--accent); }
+  .kpi .label { font-size:11px; color:var(--text-3); font-weight:700; text-transform:uppercase; letter-spacing:.6px; }
+  .kpi .value { font-size:30px; font-weight:750; color:var(--navy); line-height:1.1; margin-top:6px; font-variant-numeric:tabular-nums; }
+  .kpi.alert .value { color:var(--red); } .kpi.warn .value { color:var(--amber); } .kpi.ok .value { color:var(--green); }
+
+  .panels { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:18px; }
+  .card-pad { padding:18px 18px 20px; }
+  .card-head { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+  .card-head .section-label { margin:0; }
+  .card-head svg { width:15px; height:15px; color:var(--text-3); }
+  .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:13px; }
+  .bar-row:last-child { margin-bottom:0; }
+  .bar-row .name { width:130px; flex-shrink:0; color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bar-track { flex:1; background:#EEF2F7; border-radius:5px; height:8px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:5px; background:var(--accent); min-width:2px; transition:width .3s; }
+  .bar-row .count { width:30px; text-align:right; font-weight:700; color:var(--navy); font-variant-numeric:tabular-nums; }
+
+  .risk-card { margin-bottom:18px; }
+  .risk-head { display:flex; align-items:center; gap:8px; padding:16px 18px 0; }
+  .risk-head svg { width:15px; height:15px; color:var(--amber); }
+  .risk-list { display:flex; flex-direction:column; gap:8px; padding:14px 18px 18px; }
+  .risk-item { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:#fff; font-size:13px; }
+  .risk-item.overdue { background:var(--red-bg); border-color:#F3C9C4; }
+  .risk-item.soon { background:var(--amber-bg); border-color:#F0DCAE; }
+  .risk-item .rid { font-weight:700; color:var(--primary); width:92px; flex-shrink:0; font-variant-numeric:tabular-nums; }
+  .risk-item .rsub { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-2); }
   .risk-item .rdue { font-weight:700; }
-  .risk-item.overdue .rdue { color:var(--c-danger); }
-  .risk-item.soon .rdue { color:var(--c-warn); }
-  .empty { color:var(--c-muted); font-size:13px; padding:8px 0; }
+  .risk-item.overdue .rdue { color:var(--red); } .risk-item.soon .rdue { color:var(--amber); }
+  .empty { color:var(--text-3); font-size:13px; }
 
   .filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px; }
-  .filters select, .filters input { font:inherit; padding:8px 10px; border:1px solid var(--c-border); border-radius:8px; background:#fff; font-size:13px; }
-  .filters input[type=search] { min-width:220px; }
-  .filters .count-info { margin-left:auto; color:var(--c-muted); font-size:13px; }
+  .filters select, .filters input { font:inherit; font-size:13px; padding:8px 11px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); background:#fff; color:var(--text); }
+  .filters select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A98AB' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:30px; }
+  .filters input[type=search] { min-width:240px; }
+  .filters .chk { font-size:13px; color:var(--text-2); display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .filters .count-info { margin-left:auto; color:var(--text-3); font-size:13px; font-variant-numeric:tabular-nums; }
 
   .table-card { padding:0; overflow:hidden; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  thead th { background:#F7FAFC; text-align:left; padding:11px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--c-muted); border-bottom:2px solid var(--c-border); position:sticky; top:0; white-space:nowrap; }
-  tbody td { padding:10px 12px; border-bottom:1px solid #EDF2F7; vertical-align:middle; }
-  tbody tr:hover { background:#F7FAFC; }
-  tr.overdue { background:#FFF8F8; }
-  tr.overdue:hover { background:#FFF0F0; }
-  .rid-cell { font-weight:700; color:var(--c-primary); white-space:nowrap; }
-  .subj-cell { max-width:280px; }
-  .subj-cell .s-main { font-weight:600; }
-  .subj-cell .s-sub { color:var(--c-muted); font-size:12px; }
-  .pill { display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; }
-  .due-cell { white-space:nowrap; font-weight:600; }
-  .due-cell.late { color:var(--c-danger); }
-  .due-cell.soon { color:var(--c-warn); }
+  thead th { background:#FAFBFD; text-align:left; padding:11px 14px; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-3); font-weight:700; border-bottom:1px solid var(--border); position:sticky; top:57px; white-space:nowrap; }
+  tbody td { padding:11px 14px; border-bottom:1px solid #EEF1F6; vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover { background:#FAFBFD; }
+  tr.overdue td:first-child { box-shadow:inset 3px 0 0 var(--red); }
+  .rid-cell { font-weight:700; color:var(--primary); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .subj-cell { max-width:300px; }
+  .subj-cell .s-main { font-weight:600; color:var(--text); }
+  .subj-cell .s-sub { color:var(--text-3); font-size:12px; margin-top:1px; }
+  .owner-cell { color:var(--text-2); }
+  .pill { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:600; white-space:nowrap; }
+  .pill .dot { width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.85; }
+  .due-cell { white-space:nowrap; font-weight:600; color:var(--text-2); font-variant-numeric:tabular-nums; }
+  .due-cell.late { color:var(--red); } .due-cell.soon { color:var(--amber); }
+  .eta-cell { color:var(--text-2); font-variant-numeric:tabular-nums; }
 
-  .loading, .error-box { text-align:center; padding:50px; color:var(--c-muted); }
-  .error-box { color:var(--c-danger); }
-  .config-warn { background:#FFF5F5; border:1px solid #FEB2B2; color:#9B2C2C; padding:12px 14px; border-radius:9px; font-size:13px; margin-bottom:18px; }
+  .loading, .error-box { text-align:center; padding:60px; color:var(--text-3); }
+  .error-box { color:var(--red); }
+  .config-warn { display:flex; align-items:center; gap:10px; background:var(--red-bg); border:1px solid #F3C9C4; color:#9A2A1E; padding:12px 14px; border-radius:var(--radius-sm); font-size:13px; margin-bottom:20px; }
 
   @media (max-width: 1000px) { .kpis { grid-template-columns:repeat(2,1fr); } .panels { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header class="app-header">
-      <div class="brand-wrap">
-        <img src="https://aceolution.com/img/logo2.png" alt="Aceolution" class="brand-logo" onerror="this.style.display='none'">
-        <div class="brand-divider"></div>
-        <div class="brand-sub">
-          <div class="brand-title-line">ACEOLUTION · LATAM REQUESTS</div>
-          <div class="brand-region-line">DASHBOARD</div>
-        </div>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img class="brand-logo" src="https://aceolution.com/img/logo2.png" alt="Aceolution" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'brand-name',textContent:'ACEOLUTION'}))">
+        <span class="brand-sep"></span>
+        <span class="brand-name">LATAM Requests</span>
       </div>
-      <div class="header-right">
-        <div class="meta" id="meta-info"></div>
-        <button class="btn ghost" id="refresh-btn">↻ Refresh</button>
+      <div class="topbar-actions">
+        <span class="meta" id="meta-info"></span>
+        <button class="btn btn-outline" id="refresh-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
       </div>
-    </header>
+    </div>
+  </div>
+
+  <main class="page">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-sub">Validated requests across the LATAM team · read-only view</p>
+      </div>
+    </div>
 
     <div id="config-warn" class="config-warn" style="display:none">
-      ⚠️ <b>Backend not configured.</b> Paste the Web App URL into <code>CONFIG.scriptUrl</code> at the top of this file.
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span><b>Backend not configured.</b> Paste the Web App URL into <code>CONFIG.scriptUrl</code> at the top of this file.</span>
     </div>
 
     <div id="content" style="display:none">
       <div class="kpis" id="kpis"></div>
 
       <div class="card risk-card">
-        <h3>⚠️ Overdue / at risk</h3>
+        <div class="risk-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="section-label">Overdue / at risk</span>
+        </div>
         <div class="risk-list" id="risk-list"></div>
       </div>
 
       <div class="panels">
-        <div class="card"><h3>By status</h3><div id="by-status"></div></div>
-        <div class="card"><h3>By category</h3><div id="by-category"></div></div>
-        <div class="card"><h3>Workload by owner</h3><div id="by-responsible"></div></div>
+        <div class="card card-pad"><div class="card-head"><span class="section-label">By status</span></div><div id="by-status"></div></div>
+        <div class="card card-pad"><div class="card-head"><span class="section-label">By category</span></div><div id="by-category"></div></div>
+        <div class="card card-pad"><div class="card-head"><span class="section-label">Workload by owner</span></div><div id="by-responsible"></div></div>
       </div>
 
       <div class="filters">
@@ -130,9 +160,7 @@
         <select id="f-responsible"><option value="">All owners</option></select>
         <select id="f-country"><option value="">All countries</option></select>
         <input id="f-search" type="search" placeholder="Search subject, project, requester…" />
-        <label style="font-size:13px;color:var(--c-muted);display:flex;align-items:center;gap:6px;cursor:pointer">
-          <input type="checkbox" id="f-overdue" /> overdue only
-        </label>
+        <label class="chk"><input type="checkbox" id="f-overdue" /> Overdue only</label>
         <span class="count-info" id="count-info"></span>
       </div>
 
@@ -153,7 +181,7 @@
 
     <div class="loading" id="loading">Loading requests…</div>
     <div class="error-box" id="error" style="display:none"></div>
-  </div>
+  </main>
 
 <script>
 // =====================================================================
@@ -161,22 +189,18 @@
 // =====================================================================
 const CONFIG = {
   scriptUrl: 'https://script.google.com/macros/s/AKfycbza2es5niwMkvjzNbmbCfqLOLnxONG0iZPG4hsHtHmgSPioBk7XbMP5Xie-7F0ykCM9/exec',
-  autoRefreshMs: 0, // e.g. 60000 to refresh every minute. 0 = off.
+  autoRefreshMs: 0,
 };
 
 const STATUS_COLORS = {
-  'New':             { bg:'#EBF8FF', fg:'#2B6CB0' },
-  'Waiting on Me':   { bg:'#FEFCBF', fg:'#975A16' },
-  'Waiting Internal':{ bg:'#E9D8FD', fg:'#6B46C1' },
-  'Waiting Client':  { bg:'#E6FFFA', fg:'#2C7A7B' },
-  'Waiting Vendor':  { bg:'#FEEBC8', fg:'#9C4221' },
-  'Completed':       { bg:'#C6F6D5', fg:'#276749' },
-  'Blocked':         { bg:'#FED7D7', fg:'#9B2C2C' },
-  'Finished':        { bg:'#E2E8F0', fg:'#2D3748' },
+  'New':{bg:'#EAF2FB',fg:'#2B6CB0'}, 'Waiting on Me':{bg:'#FBF2E0',fg:'#A96A12'},
+  'Waiting Internal':{bg:'#F0EAFB',fg:'#6B46C1'}, 'Waiting Client':{bg:'#E4F4F4',fg:'#2C7A7B'},
+  'Waiting Vendor':{bg:'#FBEEE0',fg:'#B5651D'}, 'Completed':{bg:'#E8F5EE',fg:'#1F8A53'},
+  'Blocked':{bg:'#FBEBE9',fg:'#C0392B'}, 'Finished':{bg:'#EEF1F5',fg:'#56657A'},
 };
 const PRIORITY_COLORS = {
-  'Urgent': { bg:'#FED7D7', fg:'#9B2C2C' }, 'High': { bg:'#FEEBC8', fg:'#9C4221' },
-  'Normal': { bg:'#EBF8FF', fg:'#2B6CB0' }, 'Low': { bg:'#E2E8F0', fg:'#4A5568' },
+  'Urgent':{bg:'#FBEBE9',fg:'#C0392B'}, 'High':{bg:'#FBF2E0',fg:'#A96A12'},
+  'Normal':{bg:'#EAF2FB',fg:'#2B6CB0'}, 'Low':{bg:'#EEF1F5',fg:'#56657A'},
 };
 const CLOSED = ['Completed', 'Finished'];
 const SOON_DAYS = 2;
@@ -190,8 +214,8 @@ const DEFAULTS = {
 };
 
 let META = Object.assign({}, DEFAULTS);
-let ALL = [];       // validated only
-let PENDING = 0;    // pending-triage count
+let ALL = [];
+let PENDING = 0;
 
 const $ = function (id) { return document.getElementById(id); };
 function isConfigured() { return CONFIG.scriptUrl && CONFIG.scriptUrl.indexOf('COLE_A_URL') !== 0; }
@@ -204,10 +228,10 @@ function isOverdue(r) { if (!isOpen(r) || !r.slaDue) return false; const d = par
 function isSoon(r) { if (!isOpen(r) || isOverdue(r)) return false; const du = daysUntil(r.slaDue); return du !== null && du <= SOON_DAYS; }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); }
-function pill(text, colors) { const c = colors[text] || { bg:'#EDF2F7', fg:'#4A5568' }; return '<span class="pill" style="background:' + c.bg + ';color:' + c.fg + '">' + esc(text || '—') + '</span>'; }
+function pill(text, colors) { const c = colors[text] || { bg:'#EEF1F5', fg:'#56657A' }; return '<span class="pill" style="background:' + c.bg + ';color:' + c.fg + '"><span class="dot"></span>' + esc(text || '—') + '</span>'; }
 
 async function loadAll() {
-  if (!isConfigured()) { $('config-warn').style.display = 'block'; $('loading').style.display = 'none'; return; }
+  if (!isConfigured()) { $('config-warn').style.display = 'flex'; $('loading').style.display = 'none'; return; }
   try {
     const [metaRes, reqRes] = await Promise.all([
       fetch(CONFIG.scriptUrl + '?action=getMeta').then(function (r) { return r.json(); }).catch(function () { return null; }),
@@ -233,7 +257,7 @@ async function loadAll() {
     $('content').style.display = 'block';
 
     const now = new Date();
-    $('meta-info').innerHTML = (metaRes && metaRes.version ? metaRes.version + ' · ' : '') +
+    $('meta-info').textContent = (metaRes && metaRes.version ? metaRes.version + ' · ' : '') +
       ALL.length + ' validated · ' + PENDING + ' pending · ' +
       now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
   } catch (err) {
@@ -265,7 +289,7 @@ function renderKpis() {
   const blocked = ALL.filter(function (r) { return r.status === 'Blocked'; }).length;
   const done = ALL.filter(function (r) { return CLOSED.indexOf(r.status) >= 0; }).length;
   const cards = [
-    { label:'Total', value:total, cls:'' },
+    { label:'Total', value:total, cls:'info' },
     { label:'Open', value:open, cls:'' },
     { label:'Overdue', value:overdue, cls:'alert' },
     { label:'Blocked', value:blocked, cls:'warn' },
@@ -280,7 +304,7 @@ function renderRisk() {
   const risk = ALL.filter(function (r) { return isOverdue(r) || isSoon(r); })
     .sort(function (a, b) { return (parseDate(a.slaDue) || 0) - (parseDate(b.slaDue) || 0); });
   const el = $('risk-list');
-  if (!risk.length) { el.innerHTML = '<div class="empty">Nothing overdue or near the deadline. 🎉</div>'; return; }
+  if (!risk.length) { el.innerHTML = '<div class="empty">Nothing overdue or near the deadline.</div>'; return; }
   el.innerHTML = risk.map(function (r) {
     const over = isOverdue(r); const du = daysUntil(r.slaDue);
     const dueTxt = over ? ('overdue by ' + Math.abs(du) + 'd') : ('due in ' + du + 'd');
@@ -308,8 +332,8 @@ function barChart(containerId, counts, order, color) {
   }).join('');
 }
 function renderBars() {
-  barChart('by-status', countBy('status'), META.statuses, function (k) { return (STATUS_COLORS[k] && STATUS_COLORS[k].fg) || '#4A9FE0'; });
-  barChart('by-category', countBy('category'), null, '#4A9FE0');
+  barChart('by-status', countBy('status'), META.statuses, function (k) { return (STATUS_COLORS[k] && STATUS_COLORS[k].fg) || '#3B82C4'; });
+  barChart('by-category', countBy('category'), null, '#3B82C4');
   const openByResp = {};
   ALL.filter(isOpen).forEach(function (r) { const k = r.responsible || '— no owner'; openByResp[k] = (openByResp[k] || 0) + 1; });
   barChart('by-responsible', openByResp, null, '#2C5282');
@@ -336,7 +360,7 @@ function renderTable() {
   const rows = applyFilters();
   $('count-info').textContent = rows.length + ' of ' + ALL.length;
   const tb = $('tbody');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" class="empty" style="padding:24px;text-align:center">No requests match these filters.</td></tr>'; return; }
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" class="empty" style="padding:28px;text-align:center">No requests match these filters.</td></tr>'; return; }
   tb.innerHTML = rows.map(function (r) {
     const over = isOverdue(r), soon = isSoon(r);
     const dueCls = over ? 'late' : (soon ? 'soon' : '');
@@ -346,9 +370,9 @@ function renderTable() {
         '<div class="s-sub">' + esc(r.requesterName) + (r.project ? ' · ' + esc(r.project) : '') + '</div></td>' +
       '<td>' + esc(r.category) + '</td>' +
       '<td>' + pill(r.priority, PRIORITY_COLORS) + '</td>' +
-      '<td>' + esc(r.responsible || '—') + '</td>' +
+      '<td class="owner-cell">' + esc(r.responsible || '—') + '</td>' +
       '<td class="due-cell ' + dueCls + '">' + fmtDate(r.slaDue) + '</td>' +
-      '<td>' + fmtDate(r.eta) + '</td>' +
+      '<td class="eta-cell">' + fmtDate(r.eta) + '</td>' +
       '<td>' + pill(r.status, STATUS_COLORS) + '</td>' +
       '</tr>';
   }).join('');
