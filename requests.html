@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LATAM Requests — Aceolution</title>
+<style>
+  :root {
+    --c-primary: #2C5282;
+    --c-primary-dark: #1A365D;
+    --c-accent: #4A9FE0;
+    --c-bg: #F4F6F9;
+    --c-card: #FFFFFF;
+    --c-border: #E2E8F0;
+    --c-text: #1A202C;
+    --c-muted: #718096;
+    --c-danger: #C53030;
+    --c-success: #2F855A;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(26,54,93,.08), 0 8px 24px rgba(26,54,93,.06);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    line-height: 1.5;
+  }
+  .topbar {
+    background: linear-gradient(135deg, var(--c-primary-dark), var(--c-primary));
+    color: #fff;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-badge {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.25);
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 18px; letter-spacing: -1px;
+  }
+  .brand-text { display: flex; flex-direction: column; }
+  .brand-text strong { font-size: 16px; letter-spacing: .2px; }
+  .brand-text span { font-size: 12px; opacity: .8; }
+  .wrap { max-width: 760px; margin: 28px auto 60px; padding: 0 18px; }
+  .intro h1 { font-size: 24px; margin: 0 0 6px; color: var(--c-primary-dark); }
+  .intro p { margin: 0 0 22px; color: var(--c-muted); font-size: 14px; }
+  .card {
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 26px;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 13px; font-weight: 600; color: #2D3748; }
+  label .req { color: var(--c-danger); }
+  .hint { font-size: 12px; color: var(--c-muted); font-weight: 400; }
+  input, select, textarea {
+    font: inherit;
+    padding: 10px 12px;
+    border: 1px solid var(--c-border);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--c-text);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 3px rgba(74,159,224,.18);
+  }
+  textarea { resize: vertical; min-height: 96px; }
+  .sla-preview {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 10px;
+    background: #EBF4FF;
+    border: 1px solid #C3DAFE;
+    color: var(--c-primary-dark);
+    padding: 12px 14px; border-radius: 9px;
+    font-size: 13px;
+  }
+  .sla-preview b { font-weight: 700; }
+  .actions { display: flex; gap: 12px; align-items: center; margin-top: 22px; }
+  button.primary {
+    background: var(--c-primary);
+    color: #fff; border: none;
+    padding: 12px 24px; border-radius: 9px;
+    font-weight: 700; font-size: 15px; cursor: pointer;
+    transition: background .15s, transform .05s;
+  }
+  button.primary:hover { background: var(--c-primary-dark); }
+  button.primary:active { transform: translateY(1px); }
+  button.primary:disabled { opacity: .6; cursor: not-allowed; }
+  .err-msg { color: var(--c-danger); font-size: 13px; min-height: 18px; }
+  .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--c-danger); }
+
+  /* success screen */
+  .success {
+    text-align: center; padding: 40px 26px;
+  }
+  .success .check {
+    width: 64px; height: 64px; margin: 0 auto 18px;
+    border-radius: 50%; background: #C6F6D5; color: var(--c-success);
+    display: grid; place-items: center; font-size: 34px;
+  }
+  .success h2 { margin: 0 0 8px; color: var(--c-primary-dark); }
+  .success p { color: var(--c-muted); margin: 0 0 8px; }
+  .success .proto {
+    display: inline-block; margin: 12px 0 22px;
+    background: #EDF2F7; border: 1px solid var(--c-border);
+    padding: 8px 16px; border-radius: 8px;
+    font-weight: 700; font-size: 18px; letter-spacing: .5px; color: var(--c-primary);
+  }
+  button.ghost {
+    background: #fff; color: var(--c-primary);
+    border: 1px solid var(--c-primary); padding: 10px 20px;
+    border-radius: 9px; font-weight: 600; cursor: pointer;
+  }
+  .footer { text-align: center; color: var(--c-muted); font-size: 12px; margin-top: 26px; }
+  .config-warn {
+    background: #FFF5F5; border: 1px solid #FEB2B2; color: #9B2C2C;
+    padding: 12px 14px; border-radius: 9px; font-size: 13px; margin-bottom: 18px;
+  }
+  @media (max-width: 620px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand-badge">A</div>
+    <div class="brand-text">
+      <strong>Aceolution</strong>
+      <span>LATAM Team — Request Portal</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="intro">
+      <h1>Nova solicitação ao time LATAM</h1>
+      <p>Preencha os campos abaixo. O SLA é calculado automaticamente pela prioridade. Campos com <span style="color:#C53030">*</span> são obrigatórios.</p>
+    </div>
+
+    <div id="config-warn" class="config-warn" style="display:none">
+      ⚠️ <b>Backend não configurado.</b> Cole a URL do Web App em <code>CONFIG.scriptUrl</code> no topo deste arquivo.
+    </div>
+
+    <!-- FORM -->
+    <div class="card" id="form-card">
+      <form id="request-form" novalidate>
+        <div class="grid">
+          <div class="field">
+            <label for="requesterName">Seu nome <span class="req">*</span></label>
+            <input id="requesterName" name="requesterName" type="text" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="requesterEmail">Seu e-mail <span class="req">*</span></label>
+            <input id="requesterEmail" name="requesterEmail" type="email" autocomplete="email" placeholder="voce@aceolution.com" />
+          </div>
+
+          <div class="field">
+            <label for="category">Categoria <span class="req">*</span></label>
+            <select id="category" name="category"><option value="">Selecione…</option></select>
+          </div>
+          <div class="field">
+            <label for="priority">Prioridade <span class="req">*</span></label>
+            <select id="priority" name="priority"><option value="">Selecione…</option></select>
+          </div>
+
+          <div class="field full">
+            <label for="subject">Assunto <span class="req">*</span></label>
+            <input id="subject" name="subject" type="text" placeholder="Resumo curto da solicitação" />
+          </div>
+
+          <div class="field full">
+            <label for="description">O que você precisa? <span class="req">*</span></label>
+            <textarea id="description" name="description" placeholder="Descreva o que precisa, contexto, links relevantes…"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="project">Projeto <span class="hint">(opcional)</span></label>
+            <input id="project" name="project" type="text" placeholder="Ex: Street View BR, Onboarding cliente X" />
+          </div>
+          <div class="field">
+            <label for="country">País / Região <span class="hint">(opcional)</span></label>
+            <select id="country" name="country"><option value="">Selecione…</option></select>
+          </div>
+
+          <div class="field">
+            <label for="responsible">Responsável no time LATAM <span class="req">*</span></label>
+            <select id="responsible" name="responsible"><option value="">Selecione…</option></select>
+          </div>
+          <div class="field">
+            <label for="eta">ETA — data estimada <span class="hint">(opcional)</span></label>
+            <input id="eta" name="eta" type="date" />
+          </div>
+
+          <div class="field full">
+            <label for="link">Link de referência <span class="hint">(Drive, doc, etc — opcional)</span></label>
+            <input id="link" name="link" type="url" placeholder="https://…" />
+          </div>
+
+          <div class="sla-preview" id="sla-preview" style="display:none">
+            <span>⏱️</span>
+            <span id="sla-text"></span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" type="submit" id="submit-btn">Enviar solicitação</button>
+          <span class="err-msg" id="form-err"></span>
+        </div>
+      </form>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="card success" id="success-card" style="display:none">
+      <div class="check">✓</div>
+      <h2>Solicitação enviada!</h2>
+      <p>O time LATAM recebeu seu pedido e ele já está no painel de acompanhamento.</p>
+      <div class="proto" id="success-proto"></div>
+      <p id="success-sla" class="hint"></p>
+      <div style="margin-top:18px">
+        <button class="ghost" id="new-btn" type="button">Fazer outra solicitação</button>
+      </div>
+    </div>
+
+    <div class="footer">Aceolution do Brasil — LATAM Team · Ferramenta interna</div>
+  </div>
+
+<script>
+// =====================================================================
+// CONFIG — cole aqui a URL do Web App do Apps Script (termina em /exec)
+// =====================================================================
+const CONFIG = {
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbza2es5niwMkvjzNbmbCfqLOLnxONG0iZPG4hsHtHmgSPioBk7XbMP5Xie-7F0ykCM9/exec',
+};
+
+// Fallbacks caso o getMeta falhe (mantém o form usável offline). O backend é a fonte oficial.
+const DEFAULTS = {
+  categories: ['Operations','Legal','Finance','Billing','HR','Recruiting','Client Requests','Fleet','Accidents','Ramp / Payhawk','Contracts','IT','Procurement','Business Development','New client'],
+  priorities: ['Urgent','High','Normal','Low'],
+  team: ['Lucas Fuss','Bia','Pankaj','Other'],
+  countries: ['Brazil','Argentina','Chile','Colombia','Mexico','Peru','LATAM (all)','Other'],
+  sla: { Urgent: 1, High: 3, Normal: 5, Low: 10 },
+};
+
+let META = Object.assign({}, DEFAULTS);
+
+const $ = function (id) { return document.getElementById(id); };
+
+function fillSelect(id, items, keepFirst) {
+  const sel = $(id);
+  const first = keepFirst ? sel.options[0] : null;
+  sel.innerHTML = '';
+  if (first) sel.appendChild(first);
+  items.forEach(function (v) {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+// soma dias úteis no client (só pra preview; o backend recalcula oficialmente)
+function addBusinessDays(start, days) {
+  const d = new Date(start.getTime());
+  let added = 0;
+  while (added < days) {
+    d.setDate(d.getDate() + 1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) added++;
+  }
+  return d;
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function updateSlaPreview() {
+  const p = $('priority').value;
+  const box = $('sla-preview');
+  const days = META.sla[p];
+  if (!p || !days) { box.style.display = 'none'; return; }
+  const due = addBusinessDays(new Date(), days);
+  $('sla-text').innerHTML = 'SLA para prioridade <b>' + p + '</b>: até <b>' + fmtDate(due) +
+    '</b> (' + days + ' dia' + (days > 1 ? 's' : '') + ' úteis).';
+  box.style.display = 'flex';
+}
+
+async function loadMeta() {
+  if (!CONFIG.scriptUrl || CONFIG.scriptUrl.indexOf('COLE_A_URL') === 0) {
+    $('config-warn').style.display = 'block';
+    return;
+  }
+  try {
+    const res = await fetch(CONFIG.scriptUrl + '?action=getMeta');
+    const data = await res.json();
+    if (data && data.success) {
+      META = {
+        categories: data.categories || DEFAULTS.categories,
+        priorities: data.priorities || DEFAULTS.priorities,
+        team: data.team || DEFAULTS.team,
+        countries: data.countries || DEFAULTS.countries,
+        sla: data.sla || DEFAULTS.sla,
+      };
+    }
+  } catch (err) {
+    console.warn('[Requests] getMeta falhou, usando defaults:', err);
+  }
+}
+
+function populate() {
+  fillSelect('category', META.categories, true);
+  fillSelect('priority', META.priorities, true);
+  fillSelect('responsible', META.team, true);
+  fillSelect('country', META.countries, true);
+}
+
+function setInvalid(fieldId, on) {
+  const el = $(fieldId);
+  const field = el.closest('.field');
+  if (field) field.classList.toggle('invalid', on);
+}
+
+function validate() {
+  const required = ['requesterName','requesterEmail','category','priority','subject','description','responsible'];
+  let ok = true;
+  let firstBad = null;
+  required.forEach(function (id) {
+    const val = $(id).value.trim();
+    const bad = !val;
+    setInvalid(id, bad);
+    if (bad) { ok = false; if (!firstBad) firstBad = id; }
+  });
+  const email = $('requesterEmail').value.trim();
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    setInvalid('requesterEmail', true); ok = false; if (!firstBad) firstBad = 'requesterEmail';
+  }
+  if (firstBad) $(firstBad).focus();
+  return ok;
+}
+
+function collect() {
+  return {
+    type: 'createRequest',
+    requesterName: $('requesterName').value.trim(),
+    requesterEmail: $('requesterEmail').value.trim(),
+    category: $('category').value,
+    priority: $('priority').value,
+    subject: $('subject').value.trim(),
+    description: $('description').value.trim(),
+    project: $('project').value.trim(),
+    country: $('country').value,
+    responsible: $('responsible').value,
+    eta: $('eta').value,
+    link: $('link').value.trim(),
+  };
+}
+
+async function submitForm(ev) {
+  ev.preventDefault();
+  $('form-err').textContent = '';
+  if (!validate()) { $('form-err').textContent = 'Preencha os campos obrigatórios destacados.'; return; }
+  if (!CONFIG.scriptUrl || CONFIG.scriptUrl.indexOf('COLE_A_URL') === 0) {
+    $('form-err').textContent = 'Backend não configurado (CONFIG.scriptUrl).';
+    return;
+  }
+
+  const payload = collect();
+  const btn = $('submit-btn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  // protocolo client-side só pra exibir (o backend gera o ID canônico sequencial)
+  const days = META.sla[payload.priority] || 5;
+  const due = addBusinessDays(new Date(), days);
+
+  try {
+    // fire-and-forget (Apps Script não retorna CORS headers em POST)
+    await fetch(CONFIG.scriptUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+    });
+    showSuccess(due);
+  } catch (err) {
+    console.error('[Requests] erro ao enviar:', err);
+    $('form-err').textContent = 'Erro ao enviar. Tente novamente.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar solicitação';
+  }
+}
+
+function showSuccess(due) {
+  $('form-card').style.display = 'none';
+  $('success-card').style.display = 'block';
+  $('success-proto').textContent = $('category').value + ' · ' + $('priority').value;
+  $('success-sla').textContent = 'SLA estimado: até ' + fmtDate(due) + '.';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() {
+  $('request-form').reset();
+  $('sla-preview').style.display = 'none';
+  document.querySelectorAll('.field.invalid').forEach(function (f) { f.classList.remove('invalid'); });
+  $('success-card').style.display = 'none';
+  $('form-card').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+  populate();
+  $('priority').addEventListener('change', updateSlaPreview);
+  $('request-form').addEventListener('submit', submitForm);
+  $('new-btn').addEventListener('click', resetForm);
+  await loadMeta();
+  populate();
+});
+</script>
+</body>
+</html>
