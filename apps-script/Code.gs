@@ -21,7 +21,7 @@
 // CONFIG
 // ================================================================
 const CONFIG = {
-  version: 'v1.1',
+  version: 'v1.2',
 
   // '' = usa a planilha onde o script está colado (recomendado).
   spreadsheetId: '',
