@@ -44,7 +44,7 @@ const CONFIG = {
   priorities: ['Urgent', 'High', 'Normal', 'Low'],
 
   // Time LATAM (responsáveis). EDITE com a equipe real.
-  team: ['Lucas Fuss', 'Bia', 'Pankaj', 'Other'],
+  team: ['Bia', 'Fuss', 'Lucas Muzitano', 'David', 'Eduardo'],
 
   countries: ['Brazil', 'Argentina', 'Chile', 'Colombia', 'Mexico', 'Peru', 'LATAM (all)', 'Other'],
 
