@@ -194,11 +194,11 @@
           </div>
 
           <div class="field">
-            <label for="responsible">Responsável no time LATAM <span class="req">*</span></label>
+            <label for="responsible">Responsável sugerido <span class="hint">(opcional — o time confirma na triagem)</span></label>
             <select id="responsible" name="responsible"><option value="">Selecione…</option></select>
           </div>
           <div class="field">
-            <label for="eta">ETA — data estimada <span class="hint">(opcional)</span></label>
+            <label for="eta">ETA sugerido <span class="hint">(opcional)</span></label>
             <input id="eta" name="eta" type="date" />
           </div>
 
@@ -224,7 +224,7 @@
     <div class="card success" id="success-card" style="display:none">
       <div class="check">✓</div>
       <h2>Solicitação enviada!</h2>
-      <p>O time LATAM recebeu seu pedido e ele já está no painel de acompanhamento.</p>
+      <p>Sua solicitação entrou na fila de triagem do time LATAM. Você receberá um <b>email</b> assim que ela for atribuída a um responsável.</p>
       <div class="proto" id="success-proto"></div>
       <p id="success-sla" class="hint"></p>
       <div style="margin-top:18px">
@@ -331,7 +331,7 @@ function setInvalid(fieldId, on) {
 }
 
 function validate() {
-  const required = ['requesterName','requesterEmail','category','priority','subject','description','responsible'];
+  const required = ['requesterName','requesterEmail','category','priority','subject','description'];
   let ok = true;
   let firstBad = null;
   required.forEach(function (id) {

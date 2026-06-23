@@ -10,11 +10,14 @@ Ferramenta interna da Aceolution: portal de solicitações ao time LATAM. Ler an
 
 ## 🎯 O que é
 
-Dois HTMLs estáticos + Apps Script + planilha Google. **Não relacionado só ao Street View** — é o tracker de demandas do time LATAM (Operations, Legal, Finance, Fleet, etc.).
+Três HTMLs estáticos + Apps Script + planilha Google. **Não relacionado só ao Street View** — é o tracker de demandas do time LATAM (Operations, Legal, Finance, Fleet, etc.).
 
-- `requests.html` — formulário público (qualquer pessoa solicita). Solicitante preenche **tudo**, inclusive responsável e ETA.
-- `dashboard.html` — painel interno (só o time, sem login, URL não divulgada). Status, ETA, responsável, atrasados, carga por pessoa.
+- `requests.html` — formulário público (qualquer pessoa solicita). Responsável e ETA são **opcionais** (sugestão); o time confirma na triagem.
+- `triage.html` — triagem (só o time, sem login, URL não divulgada). Designa responsável, edita e **valida**. **Toda edição acontece aqui.**
+- `dashboard.html` — painel **somente leitura** (time/liderança). Mostra só os validados. **Não edita nada.**
 - `apps-script/Code.gs` — backend (Web App).
+
+**Fluxo:** solicita → entra "pendente de triagem" (`Validated` vazio) + **email pra Bia** → time valida na triagem (exige responsável) → **email pro solicitante** + `Validated=Yes` → aparece no dashboard.
 
 Ferramenta interna → "teatro de segurança" é aceitável; sem build step; POSTs fire-and-forget (CORS workaround do Apps Script); validação manual + `node --check`.
 
@@ -30,7 +33,9 @@ Ferramenta interna → "teatro de segurança" é aceitável; sem build step; POS
 - **SLA = automático por prioridade** (dias úteis): `Urgent:1, High:3, Normal:5, Low:10`. Calculado em `slaDueFrom_` / `addBusinessDays_`. Recalcula se a prioridade mudar no update.
 - **ID sequencial** (`LATAM-0001`) via Script Property `lastRequestId` + `LockService` no `doPost`.
 - **GET:** `fetch(scriptUrl + '?action=...').then(r => r.json())`.
-- **POST:** `fetch(scriptUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({type:'...'}) })` — fire-and-forget, dashboard atualiza otimista e refaz `getRequests` depois.
+- **POST:** `fetch(scriptUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({type:'...'}) })` — fire-and-forget, a triagem atualiza otimista e refaz `getRequests` depois.
+- **Triagem/validação:** `validateRequest` exige responsável, marca `Validated=Yes`, `Validated At`, e dispara email pro solicitante. `updateRequest` edita sem validar (e sem reenviar email). Só a `triage.html` faz POST de edição; o dashboard é read-only e filtra `validated` no client.
+- **Emails (MailApp):** `notifyBiaNewRequest_` (no create) e `notifyRequesterValidated_` (no validate), ambos em try/catch pra não quebrar a gravação. Saem da conta dona do script. **Exigem escopo de email** — se mexer e der erro de permissão, rode `testEmail()` no editor pra reautorizar + reimplante "Nova versão". Config em `CONFIG.notify` (`bia`, `triageUrl`).
 
 ## 🔄 Deploy
 

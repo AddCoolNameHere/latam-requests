@@ -2,50 +2,40 @@
  * LATAM Requests — Backend (Google Apps Script)
  * Aceolution do Brasil — Street View LATAM team
  *
- * Web App que conecta os HTMLs (requests.html + dashboard.html) a uma planilha.
+ * Web App que conecta os HTMLs (requests.html + triage.html + dashboard.html) a uma planilha.
  *
- * COMO USAR (resumo — passo a passo completo no README.md):
- *   1. Crie uma planilha Google nova.
- *   2. Extensões -> Apps Script -> cole este arquivo (substitui o Code.gs).
- *   3. Rode a função setup() uma vez (cria a aba "Requests" com cabeçalhos).
- *   4. Implantar -> Nova implantação -> Web App -> Executar como: Eu;
- *      Quem tem acesso: Qualquer pessoa. Copie a URL.
- *   5. Cole a URL em CONFIG.scriptUrl no topo de requests.html e dashboard.html.
+ * FLUXO (v1.1):
+ *   1. requests.html  -> nova solicitação entra como "pendente de triagem" (Validated vazio)
+ *                        e DISPARA EMAIL pra Bia.
+ *   2. triage.html    -> o time designa responsável, ajusta, e VALIDA. Validar exige responsável,
+ *                        envia email pro solicitante e marca Validated = Yes.
+ *   3. dashboard.html -> mostra SÓ os validados (somente leitura). Edição é só na triagem.
  *
- * Padrão de comunicação (mesmo dos outros projetos LATAM):
- *   - GET  -> ?action=... retorna JSON
- *   - POST -> body JSON { type: '...' }  (frontend manda fire-and-forget, no-cors)
+ * DEPLOY: ver README.md. Importante: emails exigem autorizar o escopo de e-mail
+ *   (rode testEmail() uma vez no editor) e reimplantar "Nova versão".
+ *
+ * Comunicação: GET ?action=...  /  POST body JSON { type:'...' } (fire-and-forget, no-cors).
  */
 
 // ================================================================
 // CONFIG
 // ================================================================
 const CONFIG = {
-  version: 'v1.0',
+  version: 'v1.1',
 
-  // Deixe '' para usar a planilha onde este script está colado (recomendado).
-  // Ou cole um ID se o script for standalone.
+  // '' = usa a planilha onde o script está colado (recomendado).
   spreadsheetId: '',
-
   sheetName: 'Requests',
 
-  // SLA automático por prioridade (em DIAS ÚTEIS, a partir da criação).
-  // Edite à vontade.
-  sla: {
-    Urgent: 1,
-    High: 3,
-    Normal: 5,
-    Low: 10,
-  },
+  // SLA automático por prioridade (DIAS ÚTEIS a partir da criação).
+  sla: { Urgent: 1, High: 3, Normal: 5, Low: 10 },
 
-  // Categorias (15). Mantém em sincronia com o frontend (ou o frontend puxa via getMeta).
   categories: [
     'Operations', 'Legal', 'Finance', 'Billing', 'HR', 'Recruiting',
     'Client Requests', 'Fleet', 'Accidents', 'Ramp / Payhawk', 'Contracts',
     'IT', 'Procurement', 'Business Development', 'New client',
   ],
 
-  // Status possíveis (8). 'New' é o default na criação.
   statuses: [
     'New', 'Waiting on Me', 'Waiting Internal', 'Waiting Client',
     'Waiting Vendor', 'Completed', 'Blocked', 'Finished',
@@ -53,19 +43,26 @@ const CONFIG = {
 
   priorities: ['Urgent', 'High', 'Normal', 'Low'],
 
-  // Time LATAM (responsáveis selecionáveis no form). EDITE com a equipe real.
+  // Time LATAM (responsáveis). EDITE com a equipe real.
   team: ['Lucas Fuss', 'Bia', 'Pankaj', 'Other'],
 
-  // Países/region opcionais (campo do form). EDITE conforme o escopo.
   countries: ['Brazil', 'Argentina', 'Chile', 'Colombia', 'Mexico', 'Peru', 'LATAM (all)', 'Other'],
+
+  // Notificações por email.
+  notify: {
+    enabled: true,
+    bia: 'Bia@aceolution.com',                                            // recebe TODA nova solicitação
+    triageUrl: 'https://addcoolnamehere.github.io/latam-requests/triage.html',
+    fromName: 'LATAM Requests',
+  },
 };
 
-// Ordem canônica das colunas na planilha. A leitura usa um mapa header->índice,
-// então a ordem pode mudar sem quebrar — mas NÃO renomeie os cabeçalhos.
+// Colunas canônicas. Leitura usa mapa header->índice (ordem pode mudar), mas NÃO renomeie.
 const HEADERS = [
   'ID', 'Created At', 'Requester Name', 'Requester Email', 'Category',
   'Subject', 'Description', 'Project', 'Country', 'Priority',
   'Responsible', 'ETA', 'SLA Due', 'Status', 'Link', 'Internal Notes', 'Updated At',
+  'Validated', 'Validated At',
 ];
 
 // ================================================================
@@ -73,13 +70,23 @@ const HEADERS = [
 // ================================================================
 function setup() {
   const sh = ensureSheet_();
-  // inicializa o contador de IDs com base nas linhas existentes
   const lastRow = sh.getLastRow();
   const props = PropertiesService.getScriptProperties();
   if (!props.getProperty('lastRequestId')) {
     props.setProperty('lastRequestId', String(Math.max(0, lastRow - 1)));
   }
   return 'Setup OK — aba "' + CONFIG.sheetName + '" pronta. Versão ' + CONFIG.version;
+}
+
+// Rode UMA VEZ no editor pra autorizar o envio de email e confirmar que a Bia recebe.
+function testEmail() {
+  notifyBiaNewRequest_({
+    id: 'TESTE-0000', requesterName: 'Teste', requesterEmail: 'teste@aceolution.com',
+    category: 'IT', priority: 'Normal', subject: 'Teste de email / autorização',
+    description: 'Se você recebeu isto, o envio de email está autorizado.',
+    project: 'Setup', country: 'Brazil', responsible: '—', eta: '', slaDue: '', link: '',
+  });
+  return 'Email de teste enviado para ' + CONFIG.notify.bia;
 }
 
 function getSpreadsheet_() {
@@ -90,21 +97,31 @@ function getSpreadsheet_() {
 function ensureSheet_() {
   const ss = getSpreadsheet_();
   let sh = ss.getSheetByName(CONFIG.sheetName);
-  if (!sh) {
-    sh = ss.insertSheet(CONFIG.sheetName);
-  }
-  // garante cabeçalho na linha 1
-  const firstRow = sh.getRange(1, 1, 1, HEADERS.length).getValues()[0];
-  const hasHeader = firstRow.some(function (v) { return String(v).trim() !== ''; });
+  if (!sh) sh = ss.insertSheet(CONFIG.sheetName);
+
+  const lastCol = Math.max(1, sh.getLastColumn());
+  const headerRow = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+  const hasHeader = headerRow.some(function (v) { return String(v).trim() !== ''; });
+
   if (!hasHeader) {
     sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
     sh.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#1A365D').setFontColor('#FFFFFF');
     sh.setFrozenRows(1);
+    return sh;
   }
+
+  // Migração: adiciona colunas de HEADERS que ainda não existem (ex: Validated em planilhas antigas).
+  const existing = headerRow.map(function (v) { return String(v).trim(); });
+  let col = existing.length;
+  HEADERS.forEach(function (h) {
+    if (existing.indexOf(h) === -1) {
+      col++;
+      sh.getRange(1, col).setValue(h).setFontWeight('bold').setBackground('#1A365D').setFontColor('#FFFFFF');
+    }
+  });
   return sh;
 }
 
-// header -> índice (0-based) a partir da linha 1 atual da planilha
 function headerMap_(sh) {
   const row = sh.getRange(1, 1, 1, Math.max(HEADERS.length, sh.getLastColumn())).getValues()[0];
   const map = {};
@@ -116,18 +133,24 @@ function headerMap_(sh) {
 // HELPERS
 // ================================================================
 function jsonResponse(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
+
+function isDate_(v) { return Object.prototype.toString.call(v) === '[object Date]'; }
 
 function toIso_(v) {
   if (!v) return '';
-  if (Object.prototype.toString.call(v) === '[object Date]') return v.toISOString();
+  if (isDate_(v)) return v.toISOString();
   return String(v);
 }
 
-// soma N dias úteis (pula sábado/domingo) a partir de uma data
+function fmtBr_(v) {
+  if (!v) return '';
+  let d = isDate_(v) ? v : new Date(v);
+  if (isNaN(d.getTime())) return String(v);
+  return Utilities.formatDate(d, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+}
+
 function addBusinessDays_(start, days) {
   const d = new Date(start.getTime());
   let added = 0;
@@ -136,7 +159,6 @@ function addBusinessDays_(start, days) {
     const dow = d.getDay();
     if (dow !== 0 && dow !== 6) added++;
   }
-  // joga para o fim do dia útil (23:59) pra contar o dia inteiro como dentro do prazo
   d.setHours(23, 59, 0, 0);
   return d;
 }
@@ -154,6 +176,58 @@ function nextRequestId_() {
   return 'LATAM-' + String(n).padStart(4, '0');
 }
 
+function findRow_(sh, map, id) {
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return -1;
+  const idCol = map['ID'];
+  const ids = sh.getRange(2, idCol + 1, lastRow - 1, 1).getValues();
+  for (let i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(id)) return i + 2;
+  }
+  return -1;
+}
+
+function setCell_(sh, map, row, name, value) {
+  const i = map[name];
+  if (i !== undefined) sh.getRange(row, i + 1).setValue(value);
+}
+function getCell_(sh, map, row, name) {
+  const i = map[name];
+  return (i === undefined) ? '' : sh.getRange(row, i + 1).getValue();
+}
+
+function rowToObj_(row, map, rowNumber) {
+  function cell(name) { const i = map[name]; return (i === undefined) ? '' : row[i]; }
+  return {
+    rowNumber: rowNumber,
+    id: String(cell('ID')),
+    createdAt: toIso_(cell('Created At')),
+    requesterName: String(cell('Requester Name')),
+    requesterEmail: String(cell('Requester Email')),
+    category: String(cell('Category')),
+    subject: String(cell('Subject')),
+    description: String(cell('Description')),
+    project: String(cell('Project')),
+    country: String(cell('Country')),
+    priority: String(cell('Priority')),
+    responsible: String(cell('Responsible')),
+    eta: toIso_(cell('ETA')),
+    slaDue: toIso_(cell('SLA Due')),
+    status: String(cell('Status')) || 'New',
+    link: String(cell('Link')),
+    notes: String(cell('Internal Notes')),
+    updatedAt: toIso_(cell('Updated At')),
+    validated: String(cell('Validated')).trim().toLowerCase() === 'yes',
+    validatedAt: toIso_(cell('Validated At')),
+  };
+}
+
+function readRow_(sh, map, targetRow) {
+  const width = Math.max(HEADERS.length, sh.getLastColumn());
+  const row = sh.getRange(targetRow, 1, 1, width).getValues()[0];
+  return rowToObj_(row, map, targetRow);
+}
+
 // ================================================================
 // GET
 // ================================================================
@@ -163,12 +237,16 @@ function doGet(e) {
 
     if (action === 'ping') {
       const sh = ensureSheet_();
+      const all = getAllRequests_();
       return jsonResponse({
         success: true,
         version: CONFIG.version,
         sheet: CONFIG.sheetName,
-        totalRequests: Math.max(0, sh.getLastRow() - 1),
-        endpoints: ['ping', 'getMeta', 'getRequests', 'POST createRequest', 'POST updateRequest'],
+        totalRequests: all.length,
+        pendingTriage: all.filter(function (r) { return !r.validated; }).length,
+        emailEnabled: !!(CONFIG.notify && CONFIG.notify.enabled),
+        endpoints: ['ping', 'getMeta', 'getRequests',
+                    'POST createRequest', 'POST updateRequest', 'POST validateRequest'],
         timestamp: new Date().toISOString(),
       });
     }
@@ -204,39 +282,13 @@ function getAllRequests_() {
   const width = Math.max(HEADERS.length, sh.getLastColumn());
   const rows = sh.getRange(2, 1, lastRow - 1, width).getValues();
 
-  function cell(row, name) {
-    const i = map[name];
-    return (i === undefined) ? '' : row[i];
-  }
-
   const out = [];
   for (let r = 0; r < rows.length; r++) {
-    const row = rows[r];
-    const id = cell(row, 'ID');
-    if (!id) continue;
-    out.push({
-      rowNumber: r + 2,
-      id: String(id),
-      createdAt: toIso_(cell(row, 'Created At')),
-      requesterName: String(cell(row, 'Requester Name')),
-      requesterEmail: String(cell(row, 'Requester Email')),
-      category: String(cell(row, 'Category')),
-      subject: String(cell(row, 'Subject')),
-      description: String(cell(row, 'Description')),
-      project: String(cell(row, 'Project')),
-      country: String(cell(row, 'Country')),
-      priority: String(cell(row, 'Priority')),
-      responsible: String(cell(row, 'Responsible')),
-      eta: toIso_(cell(row, 'ETA')),
-      slaDue: toIso_(cell(row, 'SLA Due')),
-      status: String(cell(row, 'Status')) || 'New',
-      link: String(cell(row, 'Link')),
-      notes: String(cell(row, 'Internal Notes')),
-      updatedAt: toIso_(cell(row, 'Updated At')),
-    });
+    const obj = rowToObj_(rows[r], map, r + 2);
+    if (!obj.id) continue;
+    out.push(obj);
   }
-  // mais recentes primeiro
-  out.reverse();
+  out.reverse(); // mais recentes primeiro
   return out;
 }
 
@@ -249,13 +301,9 @@ function doPost(e) {
     lock.waitLock(20000);
     const data = JSON.parse(e.postData.contents);
 
-    if (data.type === 'createRequest') {
-      return jsonResponse(createRequest_(data));
-    }
-
-    if (data.type === 'updateRequest') {
-      return jsonResponse(updateRequest_(data));
-    }
+    if (data.type === 'createRequest')   return jsonResponse(createRequest_(data));
+    if (data.type === 'updateRequest')   return jsonResponse(updateRequest_(data));
+    if (data.type === 'validateRequest') return jsonResponse(validateRequest_(data));
 
     return jsonResponse({ success: false, error: 'Tipo desconhecido: ' + data.type });
   } catch (err) {
@@ -292,58 +340,131 @@ function createRequest_(data) {
     'Link': data.link || '',
     'Internal Notes': '',
     'Updated At': now,
+    'Validated': '',          // pendente de triagem — não aparece no dashboard ainda
+    'Validated At': '',
   };
 
   const width = Math.max(HEADERS.length, sh.getLastColumn());
   const rowArr = new Array(width).fill('');
-  HEADERS.forEach(function (h) {
-    const i = map[h];
-    if (i !== undefined) rowArr[i] = record[h];
-  });
+  HEADERS.forEach(function (h) { const i = map[h]; if (i !== undefined) rowArr[i] = record[h]; });
   sh.appendRow(rowArr);
 
-  return { success: true, id: id, slaDue: toIso_(slaDue), message: 'Solicitação registrada' };
+  // notifica a Bia (não bloqueia a criação se o email falhar)
+  try {
+    notifyBiaNewRequest_({
+      id: id, requesterName: data.requesterName, requesterEmail: data.requesterEmail,
+      category: data.category, priority: priority, subject: data.subject, description: data.description,
+      project: data.project, country: data.country, responsible: data.responsible,
+      eta: fmtBr_(eta), slaDue: fmtBr_(slaDue), link: data.link,
+    });
+  } catch (err) { /* segue o jogo */ }
+
+  return { success: true, id: id, slaDue: toIso_(slaDue), pending: true,
+           message: 'Solicitação registrada — aguardando triagem' };
 }
 
+// edição (usada pela triagem) — NÃO mexe em Validated
 function updateRequest_(data) {
   if (!data.id) return { success: false, error: 'id obrigatório' };
   const sh = ensureSheet_();
   const map = headerMap_(sh);
-  const lastRow = sh.getLastRow();
-  if (lastRow < 2) return { success: false, error: 'sem dados' };
+  const targetRow = findRow_(sh, map, data.id);
+  if (targetRow === -1) return { success: false, error: 'ID não encontrado: ' + data.id };
+  applyEdits_(sh, map, targetRow, data);
+  setCell_(sh, map, targetRow, 'Updated At', new Date());
+  return { success: true, id: data.id, message: 'Atualizado' };
+}
 
-  const idCol = map['ID'];
-  const ids = sh.getRange(2, idCol + 1, lastRow - 1, 1).getValues();
-  let targetRow = -1;
-  for (let i = 0; i < ids.length; i++) {
-    if (String(ids[i][0]) === String(data.id)) { targetRow = i + 2; break; }
-  }
+// valida: exige responsável, marca Validated=Yes e notifica o solicitante
+function validateRequest_(data) {
+  if (!data.id) return { success: false, error: 'id obrigatório' };
+  const sh = ensureSheet_();
+  const map = headerMap_(sh);
+  const targetRow = findRow_(sh, map, data.id);
   if (targetRow === -1) return { success: false, error: 'ID não encontrado: ' + data.id };
 
-  function setCell(name, value) {
-    const i = map[name];
-    if (i !== undefined) sh.getRange(targetRow, i + 1).setValue(value);
-  }
-  function getCell(name) {
-    const i = map[name];
-    return (i === undefined) ? '' : sh.getRange(targetRow, i + 1).getValue();
-  }
+  applyEdits_(sh, map, targetRow, data);
 
+  const responsible = String(getCell_(sh, map, targetRow, 'Responsible')).trim();
+  if (!responsible) return { success: false, error: 'Defina um responsável antes de validar.' };
+
+  setCell_(sh, map, targetRow, 'Validated', 'Yes');
+  setCell_(sh, map, targetRow, 'Validated At', new Date());
+  setCell_(sh, map, targetRow, 'Updated At', new Date());
+
+  const rec = readRow_(sh, map, targetRow);
+  try { notifyRequesterValidated_(rec); } catch (err) { /* não bloqueia */ }
+
+  return { success: true, id: data.id, message: 'Validado e solicitante notificado' };
+}
+
+function applyEdits_(sh, map, targetRow, data) {
   if (data.status !== undefined && CONFIG.statuses.indexOf(data.status) >= 0) {
-    setCell('Status', data.status);
+    setCell_(sh, map, targetRow, 'Status', data.status);
   }
-  if (data.responsible !== undefined) setCell('Responsible', data.responsible);
-  if (data.eta !== undefined) setCell('ETA', data.eta ? new Date(data.eta) : '');
-  if (data.notes !== undefined) setCell('Internal Notes', data.notes);
-
-  // se a prioridade mudou, recalcula o SLA Due a partir da data de criação
+  if (data.responsible !== undefined) setCell_(sh, map, targetRow, 'Responsible', data.responsible);
+  if (data.eta !== undefined) setCell_(sh, map, targetRow, 'ETA', data.eta ? new Date(data.eta) : '');
+  if (data.notes !== undefined) setCell_(sh, map, targetRow, 'Internal Notes', data.notes);
   if (data.priority !== undefined && CONFIG.priorities.indexOf(data.priority) >= 0) {
-    setCell('Priority', data.priority);
-    const created = getCell('Created At');
-    const createdDate = (Object.prototype.toString.call(created) === '[object Date]') ? created : new Date(created);
-    setCell('SLA Due', slaDueFrom_(createdDate, data.priority));
+    setCell_(sh, map, targetRow, 'Priority', data.priority);
+    const created = getCell_(sh, map, targetRow, 'Created At');
+    const createdDate = isDate_(created) ? created : new Date(created);
+    setCell_(sh, map, targetRow, 'SLA Due', slaDueFrom_(createdDate, data.priority));
   }
+}
 
-  setCell('Updated At', new Date());
-  return { success: true, id: data.id, message: 'Atualizado' };
+// ================================================================
+// EMAIL
+// ================================================================
+function emailRow_(label, value) {
+  return '<tr><td style="padding:3px 10px 3px 0;color:#718096;vertical-align:top;white-space:nowrap"><b>' +
+    label + '</b></td><td style="padding:3px 0;color:#1A202C">' + (value == null ? '' : String(value)) + '</td></tr>';
+}
+
+function notifyBiaNewRequest_(rec) {
+  if (!CONFIG.notify || !CONFIG.notify.enabled || !CONFIG.notify.bia) return;
+  const subject = '🆕 Nova solicitação ' + rec.id + ' — ' + rec.category + ' (' + rec.priority + ')';
+  const html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px">' +
+    '<h2 style="color:#1A365D;margin:0 0 4px">Nova solicitação LATAM</h2>' +
+    '<p style="margin:0 0 14px;color:#718096">Aguardando triagem.</p>' +
+    '<table style="border-collapse:collapse;font-size:14px">' +
+      emailRow_('ID', rec.id) +
+      emailRow_('Solicitante', (rec.requesterName || '') + ' (' + (rec.requesterEmail || '') + ')') +
+      emailRow_('Categoria', rec.category) +
+      emailRow_('Prioridade', rec.priority) +
+      emailRow_('Assunto', rec.subject) +
+      emailRow_('Descrição', rec.description) +
+      emailRow_('Projeto', rec.project || '—') +
+      emailRow_('País', rec.country || '—') +
+      emailRow_('Responsável sugerido', rec.responsible || '—') +
+      emailRow_('ETA sugerido', rec.eta || '—') +
+      emailRow_('SLA', rec.slaDue || '—') +
+      (rec.link ? emailRow_('Link', '<a href="' + rec.link + '">' + rec.link + '</a>') : '') +
+    '</table>' +
+    '<p style="margin:20px 0 6px"><a href="' + (CONFIG.notify.triageUrl || '#') +
+      '" style="background:#2C5282;color:#fff;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Abrir triagem →</a></p>' +
+    '</div>';
+  MailApp.sendEmail({ to: CONFIG.notify.bia, subject: subject, htmlBody: html, name: CONFIG.notify.fromName || 'LATAM Requests' });
+}
+
+function notifyRequesterValidated_(rec) {
+  if (!CONFIG.notify || !CONFIG.notify.enabled) return;
+  if (!rec.requesterEmail) return;
+  const subject = 'Sua solicitação ' + rec.id + ' foi recebida — ' + rec.status;
+  const html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px">' +
+    '<h2 style="color:#1A365D;margin:0 0 8px">Solicitação recebida ✅</h2>' +
+    '<p>Olá ' + (rec.requesterName || '') + ',</p>' +
+    '<p>Sua solicitação <b>' + rec.id + '</b> ("' + rec.subject + '") foi recebida pelo time LATAM e já está em andamento.</p>' +
+    '<table style="border-collapse:collapse;font-size:14px;margin:8px 0">' +
+      emailRow_('Responsável', rec.responsible || '—') +
+      emailRow_('Status atual', rec.status) +
+      (rec.eta ? emailRow_('ETA', fmtBr_(rec.eta)) : '') +
+      (rec.slaDue ? emailRow_('Prazo (SLA)', fmtBr_(rec.slaDue)) : '') +
+    '</table>' +
+    '<p style="margin-top:14px;color:#718096">Você será avisado de atualizações importantes. Obrigado!</p>' +
+    '<p style="color:#718096;font-size:12px">— Time LATAM, Aceolution</p>' +
+    '</div>';
+  MailApp.sendEmail({ to: rec.requesterEmail, subject: subject, htmlBody: html, name: CONFIG.notify.fromName || 'LATAM Requests' });
 }

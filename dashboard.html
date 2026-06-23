@@ -6,19 +6,10 @@
 <title>LATAM Requests — Dashboard</title>
 <style>
   :root {
-    --c-primary: #2C5282;
-    --c-primary-dark: #1A365D;
-    --c-accent: #4A9FE0;
-    --c-bg: #F4F6F9;
-    --c-card: #FFFFFF;
-    --c-border: #E2E8F0;
-    --c-text: #1A202C;
-    --c-muted: #718096;
-    --c-danger: #C53030;
-    --c-warn: #C05621;
-    --c-success: #2F855A;
-    --radius: 12px;
-    --shadow: 0 1px 3px rgba(26,54,93,.08), 0 8px 24px rgba(26,54,93,.06);
+    --c-primary: #2C5282; --c-primary-dark: #1A365D; --c-accent: #4A9FE0;
+    --c-bg: #F4F6F9; --c-card: #FFFFFF; --c-border: #E2E8F0;
+    --c-text: #1A202C; --c-muted: #718096; --c-danger: #C53030; --c-warn: #C05621; --c-success: #2F855A;
+    --radius: 12px; --shadow: 0 1px 3px rgba(26,54,93,.08), 0 8px 24px rgba(26,54,93,.06);
   }
   * { box-sizing: border-box; }
   body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif; background:var(--c-bg); color:var(--c-text); }
@@ -28,9 +19,12 @@
   .brand-text span { font-size:12px; opacity:.82; }
   .topbar .spacer { flex:1; }
   .topbar .meta { font-size:12px; opacity:.85; text-align:right; }
-  .btn { background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.28); padding:8px 14px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; }
+  .btn { background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.28); padding:8px 14px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; text-decoration:none; display:inline-block; }
   .btn:hover { background:rgba(255,255,255,.26); }
+  .btn.triage { background:#fff; color:var(--c-primary-dark); border-color:#fff; }
+  .btn .pendnum { background:var(--c-danger); color:#fff; border-radius:999px; padding:1px 7px; font-size:11px; margin-left:6px; }
   .wrap { max-width:1320px; margin:22px auto 60px; padding:0 18px; }
+  .readonly-note { font-size:12px; color:var(--c-muted); margin:-8px 0 16px; }
 
   .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px; }
   .kpi { background:var(--c-card); border:1px solid var(--c-border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px 18px; }
@@ -62,9 +56,7 @@
   .empty { color:var(--c-muted); font-size:13px; padding:8px 0; }
 
   .filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px; }
-  .filters select, .filters input {
-    font:inherit; padding:8px 10px; border:1px solid var(--c-border); border-radius:8px; background:#fff; font-size:13px;
-  }
+  .filters select, .filters input { font:inherit; padding:8px 10px; border:1px solid var(--c-border); border-radius:8px; background:#fff; font-size:13px; }
   .filters input[type=search] { min-width:220px; }
   .filters .count-info { margin-left:auto; color:var(--c-muted); font-size:13px; }
 
@@ -76,39 +68,16 @@
   tr.overdue { background:#FFF8F8; }
   tr.overdue:hover { background:#FFF0F0; }
   .rid-cell { font-weight:700; color:var(--c-primary); white-space:nowrap; }
-  .subj-cell { max-width:260px; }
+  .subj-cell { max-width:280px; }
   .subj-cell .s-main { font-weight:600; }
   .subj-cell .s-sub { color:var(--c-muted); font-size:12px; }
   .pill { display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; }
   .due-cell { white-space:nowrap; font-weight:600; }
   .due-cell.late { color:var(--c-danger); }
   .due-cell.soon { color:var(--c-warn); }
-  .status-select { font:inherit; font-size:12px; padding:5px 8px; border-radius:7px; border:1px solid var(--c-border); font-weight:700; cursor:pointer; }
-  .edit-link { color:var(--c-accent); cursor:pointer; font-weight:600; font-size:12px; white-space:nowrap; }
-  .edit-link:hover { text-decoration:underline; }
 
   .loading, .error-box { text-align:center; padding:50px; color:var(--c-muted); }
   .error-box { color:var(--c-danger); }
-
-  /* modal */
-  .modal-bg { position:fixed; inset:0; background:rgba(26,54,93,.45); display:none; place-items:center; z-index:50; padding:20px; }
-  .modal-bg.open { display:grid; }
-  .modal { background:#fff; border-radius:14px; width:520px; max-width:100%; box-shadow:0 20px 60px rgba(0,0,0,.3); overflow:hidden; }
-  .modal header { background:var(--c-primary-dark); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
-  .modal header h3 { margin:0; font-size:15px; }
-  .modal header .x { cursor:pointer; font-size:20px; opacity:.85; }
-  .modal .body { padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .modal .body .full { grid-column:1/-1; }
-  .modal .body label { font-size:12px; font-weight:700; color:#2D3748; display:block; margin-bottom:5px; }
-  .modal .body input, .modal .body select, .modal .body textarea { width:100%; font:inherit; padding:8px 10px; border:1px solid var(--c-border); border-radius:8px; }
-  .modal .body textarea { min-height:70px; resize:vertical; }
-  .modal .ctx { grid-column:1/-1; background:#F7FAFC; border:1px solid var(--c-border); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--c-muted); }
-  .modal footer { padding:14px 20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--c-border); }
-  .modal .save { background:var(--c-primary); color:#fff; border:none; padding:9px 20px; border-radius:8px; font-weight:700; cursor:pointer; }
-  .modal .cancel { background:#fff; color:var(--c-muted); border:1px solid var(--c-border); padding:9px 18px; border-radius:8px; cursor:pointer; }
-
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--c-primary-dark); color:#fff; padding:12px 22px; border-radius:10px; font-size:14px; box-shadow:0 8px 24px rgba(0,0,0,.25); opacity:0; transition:all .25s; z-index:60; }
-  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
   .config-warn { background:#FFF5F5; border:1px solid #FEB2B2; color:#9B2C2C; padding:12px 14px; border-radius:9px; font-size:13px; margin-bottom:18px; }
 
   @media (max-width: 1000px) { .kpis { grid-template-columns:repeat(2,1fr); } .panels { grid-template-columns:1fr; } }
@@ -119,11 +88,12 @@
     <div class="brand-badge">A</div>
     <div class="brand-text">
       <strong>Aceolution · LATAM Requests</strong>
-      <span>Dashboard interno do time</span>
+      <span>Dashboard interno (somente leitura)</span>
     </div>
     <div class="spacer"></div>
     <div class="meta" id="meta-info"></div>
-    <button class="btn" id="refresh-btn" style="margin-left:14px">↻ Atualizar</button>
+    <a class="btn triage" id="triage-link" href="triage.html" style="margin-left:14px">🔧 Triagem<span class="pendnum" id="pend-num" style="display:none">0</span></a>
+    <button class="btn" id="refresh-btn" style="margin-left:8px">↻ Atualizar</button>
   </div>
 
   <div class="wrap">
@@ -132,23 +102,21 @@
     </div>
 
     <div id="content" style="display:none">
-      <!-- KPIs -->
+      <div class="readonly-note">📊 Visão da liderança — mostra só solicitações já <b>validadas na triagem</b>. Para atribuir responsável ou editar, use a <a href="triage.html">página de triagem</a>.</div>
+
       <div class="kpis" id="kpis"></div>
 
-      <!-- Atrasados / em risco -->
       <div class="card risk-card">
         <h3>⚠️ Atrasados / em risco</h3>
         <div class="risk-list" id="risk-list"></div>
       </div>
 
-      <!-- Panels: por status, por categoria, carga por responsável -->
       <div class="panels">
         <div class="card"><h3>Por status</h3><div id="by-status"></div></div>
         <div class="card"><h3>Por categoria</h3><div id="by-category"></div></div>
         <div class="card"><h3>Carga por responsável</h3><div id="by-responsible"></div></div>
       </div>
 
-      <!-- Filtros + tabela -->
       <div class="filters">
         <select id="f-status"><option value="">Todos os status</option></select>
         <select id="f-category"><option value="">Todas as categorias</option></select>
@@ -167,7 +135,7 @@
             <thead>
               <tr>
                 <th>ID</th><th>Assunto</th><th>Categoria</th><th>Prioridade</th>
-                <th>Responsável</th><th>SLA / Prazo</th><th>ETA</th><th>Status</th><th></th>
+                <th>Responsável</th><th>SLA / Prazo</th><th>ETA</th><th>Status</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -180,45 +148,9 @@
     <div class="error-box" id="error" style="display:none"></div>
   </div>
 
-  <!-- Modal de edição -->
-  <div class="modal-bg" id="modal-bg">
-    <div class="modal">
-      <header><h3 id="m-title">Editar solicitação</h3><span class="x" id="m-close">×</span></header>
-      <div class="body">
-        <div class="ctx" id="m-ctx"></div>
-        <div>
-          <label>Responsável</label>
-          <select id="m-responsible"></select>
-        </div>
-        <div>
-          <label>Prioridade <span style="font-weight:400;color:#718096">(recalcula SLA)</span></label>
-          <select id="m-priority"></select>
-        </div>
-        <div>
-          <label>ETA</label>
-          <input id="m-eta" type="date" />
-        </div>
-        <div>
-          <label>Status</label>
-          <select id="m-status"></select>
-        </div>
-        <div class="full">
-          <label>Notas internas</label>
-          <textarea id="m-notes" placeholder="Anotações do time (não aparece pro solicitante)…"></textarea>
-        </div>
-      </div>
-      <footer>
-        <button class="cancel" id="m-cancel">Cancelar</button>
-        <button class="save" id="m-save">Salvar</button>
-      </footer>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
 <script>
 // =====================================================================
-// CONFIG — mesma URL do Web App usada no requests.html
+// CONFIG — mesma URL do Web App usada no requests.html / triage.html
 // =====================================================================
 const CONFIG = {
   scriptUrl: 'https://script.google.com/macros/s/AKfycbza2es5niwMkvjzNbmbCfqLOLnxONG0iZPG4hsHtHmgSPioBk7XbMP5Xie-7F0ykCM9/exec',
@@ -253,70 +185,24 @@ const DEFAULTS = {
 };
 
 let META = Object.assign({}, DEFAULTS);
-let ALL = [];          // todas as requests
-let editingId = null;
+let ALL = [];       // só validados
+let PENDING = 0;    // contador de pendentes de triagem
 
 const $ = function (id) { return document.getElementById(id); };
+function isConfigured() { return CONFIG.scriptUrl && CONFIG.scriptUrl.indexOf('COLE_A_URL') !== 0; }
 
-function isConfigured() {
-  return CONFIG.scriptUrl && CONFIG.scriptUrl.indexOf('COLE_A_URL') !== 0;
-}
-
-function parseDate(iso) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? null : d;
-}
-function fmtDate(iso) {
-  const d = parseDate(iso);
-  return d ? d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—';
-}
-function fmtDateInput(iso) {
-  const d = parseDate(iso);
-  if (!d) return '';
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-function daysUntil(iso) {
-  const d = parseDate(iso);
-  if (!d) return null;
-  const now = new Date();
-  return Math.ceil((d.getTime() - now.getTime()) / 86400000);
-}
+function parseDate(iso) { if (!iso) return null; const d = new Date(iso); return isNaN(d.getTime()) ? null : d; }
+function fmtDate(iso) { const d = parseDate(iso); return d ? d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—'; }
+function daysUntil(iso) { const d = parseDate(iso); if (!d) return null; return Math.ceil((d.getTime() - Date.now()) / 86400000); }
 function isOpen(r) { return CLOSED.indexOf(r.status) === -1; }
-function isOverdue(r) {
-  if (!isOpen(r) || !r.slaDue) return false;
-  const d = parseDate(r.slaDue);
-  return d && d.getTime() < Date.now();
-}
-function isSoon(r) {
-  if (!isOpen(r) || isOverdue(r)) return false;
-  const du = daysUntil(r.slaDue);
-  return du !== null && du <= SOON_DAYS;
-}
+function isOverdue(r) { if (!isOpen(r) || !r.slaDue) return false; const d = parseDate(r.slaDue); return d && d.getTime() < Date.now(); }
+function isSoon(r) { if (!isOpen(r) || isOverdue(r)) return false; const du = daysUntil(r.slaDue); return du !== null && du <= SOON_DAYS; }
 
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
-  });
-}
-function pill(text, colors) {
-  const c = colors[text] || { bg:'#EDF2F7', fg:'#4A5568' };
-  return '<span class="pill" style="background:' + c.bg + ';color:' + c.fg + '">' + esc(text || '—') + '</span>';
-}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); }
+function pill(text, colors) { const c = colors[text] || { bg:'#EDF2F7', fg:'#4A5568' }; return '<span class="pill" style="background:' + c.bg + ';color:' + c.fg + '">' + esc(text || '—') + '</span>'; }
 
-function toast(msg) {
-  const t = $('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._tm); t._tm = setTimeout(function () { t.classList.remove('show'); }, 2600);
-}
-
-// ---------- carregamento ----------
 async function loadAll() {
-  if (!isConfigured()) {
-    $('config-warn').style.display = 'block';
-    $('loading').style.display = 'none';
-    return;
-  }
+  if (!isConfigured()) { $('config-warn').style.display = 'block'; $('loading').style.display = 'none'; return; }
   try {
     const [metaRes, reqRes] = await Promise.all([
       fetch(CONFIG.scriptUrl + '?action=getMeta').then(function (r) { return r.json(); }).catch(function () { return null; }),
@@ -332,15 +218,22 @@ async function loadAll() {
       };
     }
     if (!reqRes || !reqRes.success) throw new Error((reqRes && reqRes.error) || 'resposta inválida');
-    ALL = reqRes.requests || [];
+    const all = reqRes.requests || [];
+    PENDING = all.filter(function (r) { return !r.validated; }).length;
+    ALL = all.filter(function (r) { return r.validated; });
+
     setupFilters();
-    setupModalSelects();
     render();
     $('loading').style.display = 'none';
     $('content').style.display = 'block';
+
+    if (PENDING > 0) { $('pend-num').style.display = 'inline-block'; $('pend-num').textContent = PENDING; }
+    else { $('pend-num').style.display = 'none'; }
+
     const now = new Date();
     $('meta-info').innerHTML = (metaRes && metaRes.version ? metaRes.version + ' · ' : '') +
-      ALL.length + ' solicitações · atualizado ' + now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+      ALL.length + ' validadas · ' + PENDING + ' em triagem · ' +
+      now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
   } catch (err) {
     $('loading').style.display = 'none';
     $('error').style.display = 'block';
@@ -355,36 +248,13 @@ function setupFilters() {
   fillFilter('f-country', META.countries);
 }
 function fillFilter(id, items) {
-  const sel = $(id);
-  const cur = sel.value;
-  const first = sel.options[0];
-  sel.innerHTML = '';
-  sel.appendChild(first);
-  items.forEach(function (v) {
-    const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o);
-  });
+  const sel = $(id); const cur = sel.value; const first = sel.options[0];
+  sel.innerHTML = ''; sel.appendChild(first);
+  items.forEach(function (v) { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
   sel.value = cur;
 }
-function setupModalSelects() {
-  fillSel('m-responsible', META.team);
-  fillSel('m-priority', META.priorities);
-  fillSel('m-status', META.statuses);
-}
-function fillSel(id, items) {
-  const sel = $(id);
-  sel.innerHTML = '';
-  items.forEach(function (v) {
-    const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o);
-  });
-}
 
-// ---------- render ----------
-function render() {
-  renderKpis();
-  renderRisk();
-  renderBars();
-  renderTable();
-}
+function render() { renderKpis(); renderRisk(); renderBars(); renderTable(); }
 
 function renderKpis() {
   const total = ALL.length;
@@ -410,22 +280,16 @@ function renderRisk() {
   const el = $('risk-list');
   if (!risk.length) { el.innerHTML = '<div class="empty">Nada atrasado ou perto do prazo. 🎉</div>'; return; }
   el.innerHTML = risk.map(function (r) {
-    const over = isOverdue(r);
-    const du = daysUntil(r.slaDue);
+    const over = isOverdue(r); const du = daysUntil(r.slaDue);
     const dueTxt = over ? ('atrasado ' + Math.abs(du) + 'd') : ('vence em ' + du + 'd');
     return '<div class="risk-item ' + (over ? 'overdue' : 'soon') + '">' +
       '<span class="rid">' + esc(r.id) + '</span>' +
       '<span class="rsub">' + esc(r.subject) + ' · ' + esc(r.category) + ' · ' + esc(r.responsible || 'sem responsável') + '</span>' +
-      '<span class="rdue">' + dueTxt + ' (' + fmtDate(r.slaDue) + ')</span>' +
-      '</div>';
+      '<span class="rdue">' + dueTxt + ' (' + fmtDate(r.slaDue) + ')</span></div>';
   }).join('');
 }
 
-function countBy(key) {
-  const m = {};
-  ALL.forEach(function (r) { const k = r[key] || '—'; m[k] = (m[k] || 0) + 1; });
-  return m;
-}
+function countBy(key) { const m = {}; ALL.forEach(function (r) { const k = r[key] || '—'; m[k] = (m[k] || 0) + 1; }); return m; }
 function barChart(containerId, counts, order, color) {
   const entries = order
     ? order.map(function (k) { return [k, counts[k] || 0]; }).filter(function (e) { return e[1] > 0; })
@@ -441,13 +305,9 @@ function barChart(containerId, counts, order, color) {
       '<span class="count">' + e[1] + '</span></div>';
   }).join('');
 }
-
 function renderBars() {
-  barChart('by-status', countBy('status'), META.statuses, function (k) {
-    return (STATUS_COLORS[k] && STATUS_COLORS[k].fg) || '#4A9FE0';
-  });
+  barChart('by-status', countBy('status'), META.statuses, function (k) { return (STATUS_COLORS[k] && STATUS_COLORS[k].fg) || '#4A9FE0'; });
   barChart('by-category', countBy('category'), null, '#4A9FE0');
-  // carga por responsável: só requests em aberto contam pra "carga"
   const openByResp = {};
   ALL.filter(isOpen).forEach(function (r) { const k = r.responsible || '— sem responsável'; openByResp[k] = (openByResp[k] || 0) + 1; });
   barChart('by-responsible', openByResp, null, '#2C5282');
@@ -474,14 +334,10 @@ function renderTable() {
   const rows = applyFilters();
   $('count-info').textContent = rows.length + ' de ' + ALL.length;
   const tb = $('tbody');
-  if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" class="empty" style="padding:24px;text-align:center">Nenhuma solicitação com esses filtros.</td></tr>'; return; }
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" class="empty" style="padding:24px;text-align:center">Nenhuma solicitação com esses filtros.</td></tr>'; return; }
   tb.innerHTML = rows.map(function (r) {
     const over = isOverdue(r), soon = isSoon(r);
     const dueCls = over ? 'late' : (soon ? 'soon' : '');
-    const statusOpts = META.statuses.map(function (s) {
-      return '<option value="' + esc(s) + '"' + (s === r.status ? ' selected' : '') + '>' + esc(s) + '</option>';
-    }).join('');
-    const sc = STATUS_COLORS[r.status] || { bg:'#EDF2F7', fg:'#4A5568' };
     return '<tr class="' + (over ? 'overdue' : '') + '">' +
       '<td class="rid-cell">' + esc(r.id) + '</td>' +
       '<td class="subj-cell"><div class="s-main">' + esc(r.subject) + '</div>' +
@@ -491,91 +347,18 @@ function renderTable() {
       '<td>' + esc(r.responsible || '—') + '</td>' +
       '<td class="due-cell ' + dueCls + '">' + fmtDate(r.slaDue) + '</td>' +
       '<td>' + fmtDate(r.eta) + '</td>' +
-      '<td><select class="status-select" data-id="' + esc(r.id) + '" style="background:' + sc.bg + ';color:' + sc.fg + '">' + statusOpts + '</select></td>' +
-      '<td><span class="edit-link" data-id="' + esc(r.id) + '">editar</span></td>' +
+      '<td>' + pill(r.status, STATUS_COLORS) + '</td>' +
       '</tr>';
   }).join('');
-
-  tb.querySelectorAll('.status-select').forEach(function (sel) {
-    sel.addEventListener('change', function () { quickStatus(sel.getAttribute('data-id'), sel.value); });
-  });
-  tb.querySelectorAll('.edit-link').forEach(function (lnk) {
-    lnk.addEventListener('click', function () { openModal(lnk.getAttribute('data-id')); });
-  });
 }
 
-// ---------- updates ----------
-function postUpdate(payload) {
-  return fetch(CONFIG.scriptUrl, {
-    method: 'POST', mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(Object.assign({ type: 'updateRequest' }, payload)),
-  });
-}
-
-async function quickStatus(id, status) {
-  const r = ALL.find(function (x) { return x.id === id; });
-  if (r) r.status = status; // otimista
-  renderKpis(); renderRisk(); renderBars(); renderTable();
-  try { await postUpdate({ id: id, status: status }); toast('Status atualizado: ' + id + ' → ' + status); }
-  catch (e) { toast('Erro ao atualizar status'); }
-}
-
-function openModal(id) {
-  const r = ALL.find(function (x) { return x.id === id; });
-  if (!r) return;
-  editingId = id;
-  $('m-title').textContent = 'Editar ' + r.id;
-  $('m-ctx').innerHTML = '<b>' + esc(r.subject) + '</b><br>' + esc(r.category) + ' · ' + esc(r.requesterName) +
-    ' (' + esc(r.requesterEmail) + ')<br>' + esc(r.description || '');
-  $('m-responsible').value = r.responsible || META.team[0];
-  $('m-priority').value = r.priority || 'Normal';
-  $('m-eta').value = fmtDateInput(r.eta);
-  $('m-status').value = r.status || 'New';
-  $('m-notes').value = r.notes || '';
-  $('modal-bg').classList.add('open');
-}
-function closeModal() { $('modal-bg').classList.remove('open'); editingId = null; }
-
-async function saveModal() {
-  if (!editingId) return;
-  const r = ALL.find(function (x) { return x.id === editingId; });
-  const payload = {
-    id: editingId,
-    responsible: $('m-responsible').value,
-    priority: $('m-priority').value,
-    eta: $('m-eta').value,
-    status: $('m-status').value,
-    notes: $('m-notes').value,
-  };
-  // otimista
-  if (r) {
-    r.responsible = payload.responsible; r.priority = payload.priority;
-    r.eta = payload.eta ? new Date(payload.eta).toISOString() : '';
-    r.status = payload.status; r.notes = payload.notes;
-  }
-  closeModal();
-  render();
-  try { await postUpdate(payload); toast('Solicitação atualizada. Atualizando SLA…'); setTimeout(loadAll, 1500); }
-  catch (e) { toast('Erro ao salvar'); }
-}
-
-// ---------- eventos ----------
 document.addEventListener('DOMContentLoaded', function () {
-  ['f-status','f-category','f-responsible','f-country'].forEach(function (id) {
-    $(id).addEventListener('change', renderTable);
-  });
+  ['f-status','f-category','f-responsible','f-country'].forEach(function (id) { $(id).addEventListener('change', renderTable); });
   $('f-search').addEventListener('input', renderTable);
   $('f-overdue').addEventListener('change', renderTable);
   $('refresh-btn').addEventListener('click', function () {
-    $('loading').style.display = 'block'; $('content').style.display = 'none'; $('error').style.display = 'none';
-    loadAll();
+    $('loading').style.display = 'block'; $('content').style.display = 'none'; $('error').style.display = 'none'; loadAll();
   });
-  $('m-close').addEventListener('click', closeModal);
-  $('m-cancel').addEventListener('click', closeModal);
-  $('m-save').addEventListener('click', saveModal);
-  $('modal-bg').addEventListener('click', function (e) { if (e.target === $('modal-bg')) closeModal(); });
-
   loadAll();
   if (CONFIG.autoRefreshMs > 0) setInterval(loadAll, CONFIG.autoRefreshMs);
 });

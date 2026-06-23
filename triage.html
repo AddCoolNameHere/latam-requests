@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LATAM Requests — Triagem</title>
+<style>
+  :root {
+    --c-primary: #2C5282; --c-primary-dark: #1A365D; --c-accent: #4A9FE0;
+    --c-bg: #F4F6F9; --c-card: #FFFFFF; --c-border: #E2E8F0;
+    --c-text: #1A202C; --c-muted: #718096; --c-danger: #C53030; --c-warn: #C05621; --c-success: #2F855A;
+    --radius: 12px; --shadow: 0 1px 3px rgba(26,54,93,.08), 0 8px 24px rgba(26,54,93,.06);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif; background:var(--c-bg); color:var(--c-text); }
+  .topbar { background:linear-gradient(135deg,var(--c-primary-dark),var(--c-primary)); color:#fff; padding:16px 24px; display:flex; align-items:center; gap:14px; }
+  .brand-badge { width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25); display:grid; place-items:center; font-weight:800; font-size:17px; }
+  .brand-text strong { font-size:15px; display:block; }
+  .brand-text span { font-size:12px; opacity:.82; }
+  .topbar .spacer { flex:1; }
+  .topbar .meta { font-size:12px; opacity:.85; text-align:right; }
+  .btn { background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.28); padding:8px 14px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; text-decoration:none; display:inline-block; }
+  .btn:hover { background:rgba(255,255,255,.26); }
+  .wrap { max-width:1280px; margin:22px auto 60px; padding:0 18px; }
+
+  .tabs { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+  .tab { padding:8px 16px; border-radius:999px; border:1px solid var(--c-border); background:#fff; cursor:pointer; font-weight:600; font-size:13px; color:var(--c-muted); }
+  .tab.active { background:var(--c-primary); color:#fff; border-color:var(--c-primary); }
+  .tab .n { background:rgba(0,0,0,.12); border-radius:999px; padding:0 7px; margin-left:6px; font-size:11px; }
+  .tab.active .n { background:rgba(255,255,255,.25); }
+  .filters { margin-left:auto; display:flex; gap:10px; }
+  .filters select, .filters input { font:inherit; padding:8px 10px; border:1px solid var(--c-border); border-radius:8px; background:#fff; font-size:13px; }
+  .filters input[type=search] { min-width:220px; }
+
+  .card { background:var(--c-card); border:1px solid var(--c-border); border-radius:var(--radius); box-shadow:var(--shadow); }
+  .table-card { padding:0; overflow:hidden; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead th { background:#F7FAFC; text-align:left; padding:11px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--c-muted); border-bottom:2px solid var(--c-border); white-space:nowrap; }
+  tbody td { padding:10px 12px; border-bottom:1px solid #EDF2F7; vertical-align:middle; }
+  tbody tr:hover { background:#F7FAFC; }
+  tr.pending { border-left:3px solid var(--c-accent); }
+  .rid-cell { font-weight:700; color:var(--c-primary); white-space:nowrap; }
+  .subj-cell { max-width:300px; }
+  .subj-cell .s-main { font-weight:600; }
+  .subj-cell .s-sub { color:var(--c-muted); font-size:12px; }
+  .pill { display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .badge-new { background:#EBF8FF; color:#2B6CB0; }
+  .badge-val { background:#C6F6D5; color:#276749; }
+  .act-btn { background:var(--c-primary); color:#fff; border:none; padding:6px 14px; border-radius:7px; font-weight:700; cursor:pointer; font-size:12px; }
+  .act-btn.edit { background:#fff; color:var(--c-primary); border:1px solid var(--c-primary); }
+  .act-btn:hover { opacity:.92; }
+
+  .loading, .error-box { text-align:center; padding:50px; color:var(--c-muted); }
+  .error-box { color:var(--c-danger); }
+  .empty { color:var(--c-muted); font-size:13px; padding:24px; text-align:center; }
+  .config-warn { background:#FFF5F5; border:1px solid #FEB2B2; color:#9B2C2C; padding:12px 14px; border-radius:9px; font-size:13px; margin-bottom:18px; }
+
+  /* modal */
+  .modal-bg { position:fixed; inset:0; background:rgba(26,54,93,.45); display:none; place-items:center; z-index:50; padding:20px; }
+  .modal-bg.open { display:grid; }
+  .modal { background:#fff; border-radius:14px; width:580px; max-width:100%; box-shadow:0 20px 60px rgba(0,0,0,.3); overflow:hidden; max-height:92vh; display:flex; flex-direction:column; }
+  .modal header { background:var(--c-primary-dark); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
+  .modal header h3 { margin:0; font-size:15px; }
+  .modal header .x { cursor:pointer; font-size:20px; opacity:.85; }
+  .modal .body { padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:14px; overflow-y:auto; }
+  .modal .body .full { grid-column:1/-1; }
+  .modal .body label { font-size:12px; font-weight:700; color:#2D3748; display:block; margin-bottom:5px; }
+  .modal .body input, .modal .body select, .modal .body textarea { width:100%; font:inherit; padding:8px 10px; border:1px solid var(--c-border); border-radius:8px; }
+  .modal .body textarea { min-height:70px; resize:vertical; }
+  .modal .ctx { grid-column:1/-1; background:#F7FAFC; border:1px solid var(--c-border); border-radius:8px; padding:12px 14px; font-size:13px; }
+  .modal .ctx b { color:#2D3748; }
+  .modal .ctx .desc { margin-top:6px; color:#4A5568; white-space:pre-wrap; }
+  .val-note { grid-column:1/-1; font-size:12px; color:var(--c-success); font-weight:600; }
+  .req-mark { color:var(--c-danger); }
+  .modal footer { padding:14px 20px; display:flex; justify-content:space-between; gap:10px; border-top:1px solid var(--c-border); align-items:center; }
+  .modal footer .right { display:flex; gap:10px; }
+  .modal .save { background:#fff; color:var(--c-primary); border:1px solid var(--c-primary); padding:9px 18px; border-radius:8px; font-weight:700; cursor:pointer; }
+  .modal .validate { background:var(--c-success); color:#fff; border:none; padding:9px 20px; border-radius:8px; font-weight:700; cursor:pointer; }
+  .modal .validate:disabled { opacity:.5; cursor:not-allowed; }
+  .modal .cancel { background:none; color:var(--c-muted); border:none; cursor:pointer; font-size:13px; }
+
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--c-primary-dark); color:#fff; padding:12px 22px; border-radius:10px; font-size:14px; box-shadow:0 8px 24px rgba(0,0,0,.25); opacity:0; transition:all .25s; z-index:60; }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand-badge">A</div>
+    <div class="brand-text">
+      <strong>Aceolution · LATAM Requests</strong>
+      <span>Triagem — designar, editar e validar</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="meta" id="meta-info"></div>
+    <a class="btn" href="dashboard.html" style="margin-left:14px">📊 Dashboard</a>
+    <button class="btn" id="refresh-btn" style="margin-left:8px">↻ Atualizar</button>
+  </div>
+
+  <div class="wrap">
+    <div id="config-warn" class="config-warn" style="display:none">
+      ⚠️ <b>Backend não configurado.</b> Cole a URL do Web App em <code>CONFIG.scriptUrl</code> no topo deste arquivo.
+    </div>
+
+    <div id="content" style="display:none">
+      <div class="tabs">
+        <div class="tab active" data-view="novos" id="tab-novos">🔵 Novos<span class="n" id="n-novos">0</span></div>
+        <div class="tab" data-view="validados" id="tab-validados">✅ Validados<span class="n" id="n-validados">0</span></div>
+        <div class="tab" data-view="todos" id="tab-todos">Todos<span class="n" id="n-todos">0</span></div>
+        <div class="filters">
+          <select id="f-category"><option value="">Todas categorias</option></select>
+          <input id="f-search" type="search" placeholder="Buscar…" />
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Estado</th><th>Assunto</th><th>Categoria</th><th>Prioridade</th>
+                <th>Responsável</th><th>Status</th><th>Criado</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading" id="loading">Carregando solicitações…</div>
+    <div class="error-box" id="error" style="display:none"></div>
+  </div>
+
+  <!-- Modal de triagem / edição -->
+  <div class="modal-bg" id="modal-bg">
+    <div class="modal">
+      <header><h3 id="m-title">Triar solicitação</h3><span class="x" id="m-close">×</span></header>
+      <div class="body">
+        <div class="ctx" id="m-ctx"></div>
+        <div class="val-note" id="m-valnote" style="display:none"></div>
+        <div>
+          <label>Responsável <span class="req-mark" id="m-resp-req">*</span></label>
+          <select id="m-responsible"><option value="">— escolher —</option></select>
+        </div>
+        <div>
+          <label>Prioridade <span style="font-weight:400;color:#718096">(recalcula SLA)</span></label>
+          <select id="m-priority"></select>
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="m-status"></select>
+        </div>
+        <div>
+          <label>ETA</label>
+          <input id="m-eta" type="date" />
+        </div>
+        <div class="full">
+          <label>Notas internas</label>
+          <textarea id="m-notes" placeholder="Anotações do time (não vão pro solicitante)…"></textarea>
+        </div>
+      </div>
+      <footer>
+        <button class="cancel" id="m-cancel">Cancelar</button>
+        <div class="right">
+          <button class="save" id="m-save">Salvar sem validar</button>
+          <button class="validate" id="m-validate">✅ Validar e notificar</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+// =====================================================================
+// CONFIG — mesma URL do Web App usada no requests.html / dashboard.html
+// =====================================================================
+const CONFIG = {
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbza2es5niwMkvjzNbmbCfqLOLnxONG0iZPG4hsHtHmgSPioBk7XbMP5Xie-7F0ykCM9/exec',
+};
+
+const STATUS_COLORS = {
+  'New':{bg:'#EBF8FF',fg:'#2B6CB0'},'Waiting on Me':{bg:'#FEFCBF',fg:'#975A16'},
+  'Waiting Internal':{bg:'#E9D8FD',fg:'#6B46C1'},'Waiting Client':{bg:'#E6FFFA',fg:'#2C7A7B'},
+  'Waiting Vendor':{bg:'#FEEBC8',fg:'#9C4221'},'Completed':{bg:'#C6F6D5',fg:'#276749'},
+  'Blocked':{bg:'#FED7D7',fg:'#9B2C2C'},'Finished':{bg:'#E2E8F0',fg:'#2D3748'},
+};
+const PRIORITY_COLORS = {
+  'Urgent':{bg:'#FED7D7',fg:'#9B2C2C'},'High':{bg:'#FEEBC8',fg:'#9C4221'},
+  'Normal':{bg:'#EBF8FF',fg:'#2B6CB0'},'Low':{bg:'#E2E8F0',fg:'#4A5568'},
+};
+const DEFAULTS = {
+  categories: ['Operations','Legal','Finance','Billing','HR','Recruiting','Client Requests','Fleet','Accidents','Ramp / Payhawk','Contracts','IT','Procurement','Business Development','New client'],
+  statuses: ['New','Waiting on Me','Waiting Internal','Waiting Client','Waiting Vendor','Completed','Blocked','Finished'],
+  priorities: ['Urgent','High','Normal','Low'],
+  team: ['Lucas Fuss','Bia','Pankaj','Other'],
+};
+
+let META = Object.assign({}, DEFAULTS);
+let ALL = [];
+let VIEW = 'novos';
+let editingId = null;
+
+const $ = function (id) { return document.getElementById(id); };
+function isConfigured() { return CONFIG.scriptUrl && CONFIG.scriptUrl.indexOf('COLE_A_URL') !== 0; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function parseDate(iso) { if (!iso) return null; const d = new Date(iso); return isNaN(d.getTime()) ? null : d; }
+function fmtDate(iso) { const d = parseDate(iso); return d ? d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—'; }
+function fmtDateInput(iso) { const d = parseDate(iso); if (!d) return ''; return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function pill(text, colors) { const c = colors[text] || {bg:'#EDF2F7',fg:'#4A5568'}; return '<span class="pill" style="background:' + c.bg + ';color:' + c.fg + '">' + esc(text || '—') + '</span>'; }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._tm); t._tm = setTimeout(function () { t.classList.remove('show'); }, 2800); }
+
+async function loadAll() {
+  if (!isConfigured()) { $('config-warn').style.display = 'block'; $('loading').style.display = 'none'; return; }
+  try {
+    const [metaRes, reqRes] = await Promise.all([
+      fetch(CONFIG.scriptUrl + '?action=getMeta').then(function (r) { return r.json(); }).catch(function () { return null; }),
+      fetch(CONFIG.scriptUrl + '?action=getRequests').then(function (r) { return r.json(); }),
+    ]);
+    if (metaRes && metaRes.success) {
+      META = {
+        categories: metaRes.categories || DEFAULTS.categories,
+        statuses: metaRes.statuses || DEFAULTS.statuses,
+        priorities: metaRes.priorities || DEFAULTS.priorities,
+        team: metaRes.team || DEFAULTS.team,
+      };
+    }
+    if (!reqRes || !reqRes.success) throw new Error((reqRes && reqRes.error) || 'resposta inválida');
+    ALL = reqRes.requests || [];
+    setupSelects();
+    render();
+    $('loading').style.display = 'none';
+    $('content').style.display = 'block';
+    const now = new Date();
+    $('meta-info').innerHTML = (metaRes && metaRes.version ? metaRes.version + ' · ' : '') +
+      'atualizado ' + now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+  } catch (err) {
+    $('loading').style.display = 'none';
+    $('error').style.display = 'block';
+    $('error').textContent = 'Erro ao carregar: ' + err.message;
+  }
+}
+
+function setupSelects() {
+  fillSel('f-category', META.categories, true);
+  fillSel('m-responsible', META.team, true);
+  fillSel('m-priority', META.priorities, false);
+  fillSel('m-status', META.statuses, false);
+}
+function fillSel(id, items, keepFirst) {
+  const sel = $(id); const first = keepFirst ? sel.options[0] : null; const cur = sel.value;
+  sel.innerHTML = ''; if (first) sel.appendChild(first);
+  items.forEach(function (v) { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+  if (cur) sel.value = cur;
+}
+
+function counts() {
+  const novos = ALL.filter(function (r) { return !r.validated; }).length;
+  const val = ALL.length - novos;
+  return { novos: novos, validados: val, todos: ALL.length };
+}
+
+function currentRows() {
+  const fc = $('f-category').value, fq = $('f-search').value.trim().toLowerCase();
+  return ALL.filter(function (r) {
+    if (VIEW === 'novos' && r.validated) return false;
+    if (VIEW === 'validados' && !r.validated) return false;
+    if (fc && r.category !== fc) return false;
+    if (fq) {
+      const hay = (r.subject + ' ' + r.project + ' ' + r.requesterName + ' ' + r.description + ' ' + r.id + ' ' + r.responsible).toLowerCase();
+      if (hay.indexOf(fq) === -1) return false;
+    }
+    return true;
+  });
+}
+
+function render() {
+  const c = counts();
+  $('n-novos').textContent = c.novos; $('n-validados').textContent = c.validados; $('n-todos').textContent = c.todos;
+  document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('active', t.getAttribute('data-view') === VIEW); });
+
+  const rows = currentRows();
+  const tb = $('tbody');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">Nada aqui. 🎉</td></tr>'; return; }
+  tb.innerHTML = rows.map(function (r) {
+    const badge = r.validated
+      ? '<span class="pill badge-val">Validado</span>'
+      : '<span class="pill badge-new">Novo</span>';
+    const btn = r.validated
+      ? '<button class="act-btn edit" data-id="' + esc(r.id) + '">Editar</button>'
+      : '<button class="act-btn" data-id="' + esc(r.id) + '">Triar →</button>';
+    return '<tr class="' + (r.validated ? '' : 'pending') + '">' +
+      '<td class="rid-cell">' + esc(r.id) + '</td>' +
+      '<td>' + badge + '</td>' +
+      '<td class="subj-cell"><div class="s-main">' + esc(r.subject) + '</div>' +
+        '<div class="s-sub">' + esc(r.requesterName) + (r.project ? ' · ' + esc(r.project) : '') + '</div></td>' +
+      '<td>' + esc(r.category) + '</td>' +
+      '<td>' + pill(r.priority, PRIORITY_COLORS) + '</td>' +
+      '<td>' + esc(r.responsible || '—') + '</td>' +
+      '<td>' + pill(r.status, STATUS_COLORS) + '</td>' +
+      '<td style="white-space:nowrap">' + fmtDate(r.createdAt) + '</td>' +
+      '<td>' + btn + '</td></tr>';
+  }).join('');
+
+  tb.querySelectorAll('.act-btn').forEach(function (b) {
+    b.addEventListener('click', function () { openModal(b.getAttribute('data-id')); });
+  });
+}
+
+function openModal(id) {
+  const r = ALL.find(function (x) { return x.id === id; });
+  if (!r) return;
+  editingId = id;
+  $('m-title').textContent = (r.validated ? 'Editar ' : 'Triar ') + r.id;
+  $('m-ctx').innerHTML =
+    '<b>' + esc(r.subject) + '</b><br>' +
+    esc(r.category) + ' · ' + esc(r.priority) + ' · ' + esc(r.requesterName) + ' (' + esc(r.requesterEmail) + ')' +
+    (r.country ? ' · ' + esc(r.country) : '') +
+    (r.link ? '<br><a href="' + esc(r.link) + '" target="_blank">' + esc(r.link) + '</a>' : '') +
+    '<div class="desc">' + esc(r.description || '') + '</div>';
+  $('m-responsible').value = r.responsible || '';
+  $('m-priority').value = r.priority || 'Normal';
+  $('m-status').value = r.status || 'New';
+  $('m-eta').value = fmtDateInput(r.eta);
+  $('m-notes').value = r.notes || '';
+
+  if (r.validated) {
+    $('m-valnote').style.display = 'block';
+    $('m-valnote').textContent = '✅ Já validada' + (r.validatedAt ? ' em ' + fmtDate(r.validatedAt) : '') + ' — está no dashboard. Editar não reenvia email.';
+    $('m-validate').style.display = 'none';
+    $('m-resp-req').style.display = 'none';
+    $('m-save').textContent = 'Salvar alterações';
+  } else {
+    $('m-valnote').style.display = 'none';
+    $('m-validate').style.display = 'inline-block';
+    $('m-resp-req').style.display = 'inline';
+    $('m-save').textContent = 'Salvar sem validar';
+  }
+  updateValidateBtn();
+  $('modal-bg').classList.add('open');
+}
+function closeModal() { $('modal-bg').classList.remove('open'); editingId = null; }
+function updateValidateBtn() { $('m-validate').disabled = !$('m-responsible').value; }
+
+function collectEdits() {
+  return {
+    id: editingId,
+    responsible: $('m-responsible').value,
+    priority: $('m-priority').value,
+    status: $('m-status').value,
+    eta: $('m-eta').value,
+    notes: $('m-notes').value,
+  };
+}
+function applyOptimistic(r, p, validated) {
+  if (!r) return;
+  r.responsible = p.responsible; r.priority = p.priority; r.status = p.status;
+  r.eta = p.eta ? new Date(p.eta).toISOString() : ''; r.notes = p.notes;
+  if (validated) { r.validated = true; r.validatedAt = new Date().toISOString(); }
+}
+function post(type, payload) {
+  return fetch(CONFIG.scriptUrl, {
+    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(Object.assign({ type: type }, payload)),
+  });
+}
+
+async function saveOnly() {
+  const p = collectEdits(); const r = ALL.find(function (x) { return x.id === editingId; });
+  applyOptimistic(r, p, false);
+  closeModal(); render();
+  try { await post('updateRequest', p); toast('Alterações salvas: ' + p.id); setTimeout(loadAll, 1200); }
+  catch (e) { toast('Erro ao salvar'); }
+}
+async function validateNow() {
+  const p = collectEdits();
+  if (!p.responsible) { toast('Defina um responsável antes de validar.'); return; }
+  const r = ALL.find(function (x) { return x.id === editingId; });
+  applyOptimistic(r, p, true);
+  closeModal(); render();
+  try { await post('validateRequest', p); toast('✅ Validado! Solicitante notificado: ' + p.id); setTimeout(loadAll, 1400); }
+  catch (e) { toast('Erro ao validar'); }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () { VIEW = t.getAttribute('data-view'); render(); });
+  });
+  $('f-category').addEventListener('change', render);
+  $('f-search').addEventListener('input', render);
+  $('refresh-btn').addEventListener('click', function () {
+    $('loading').style.display = 'block'; $('content').style.display = 'none'; $('error').style.display = 'none'; loadAll();
+  });
+  $('m-responsible').addEventListener('change', updateValidateBtn);
+  $('m-close').addEventListener('click', closeModal);
+  $('m-cancel').addEventListener('click', closeModal);
+  $('m-save').addEventListener('click', saveOnly);
+  $('m-validate').addEventListener('click', validateNow);
+  $('modal-bg').addEventListener('click', function (e) { if (e.target === $('modal-bg')) closeModal(); });
+  loadAll();
+});
+</script>
+</body>
+</html>
