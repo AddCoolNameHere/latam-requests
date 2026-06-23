@@ -102,7 +102,6 @@
       </div>
       <div class="header-right">
         <div class="meta" id="meta-info"></div>
-        <a class="btn" id="triage-link" href="triage.html">🔧 Triage<span class="pendnum" id="pend-num" style="display:none">0</span></a>
         <button class="btn ghost" id="refresh-btn">↻ Refresh</button>
       </div>
     </header>
@@ -112,8 +111,6 @@
     </div>
 
     <div id="content" style="display:none">
-      <div class="readonly-note">📊 Leadership view — shows only requests already <b>validated at triage</b>. To assign an owner or edit, use the <a href="triage.html">triage page</a>.</div>
-
       <div class="kpis" id="kpis"></div>
 
       <div class="card risk-card">
@@ -235,12 +232,9 @@ async function loadAll() {
     $('loading').style.display = 'none';
     $('content').style.display = 'block';
 
-    if (PENDING > 0) { $('pend-num').style.display = 'inline-block'; $('pend-num').textContent = PENDING; }
-    else { $('pend-num').style.display = 'none'; }
-
     const now = new Date();
     $('meta-info').innerHTML = (metaRes && metaRes.version ? metaRes.version + ' · ' : '') +
-      ALL.length + ' validated · ' + PENDING + ' in triage · ' +
+      ALL.length + ' validated · ' + PENDING + ' pending · ' +
       now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
   } catch (err) {
     $('loading').style.display = 'none';
